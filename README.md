@@ -130,6 +130,10 @@ changesets:
 ```java
 runner.update();                         // apply all pending changesets
 runner.update(5);                        // apply up to 5 changesets
+runner.rollback(3);                      // rollback last 3 changesets
+runner.rollback("v1.0");                 // rollback to tag
+runner.rollback(Instant.parse("..."));   // rollback to point in time
+runner.generateRollbackSql(3);           // dry-run: rollback SQL without executing
 runner.tag("v1.0");                      // tag current state
 runner.sync();                           // mark all pending as executed
 runner.history();                        // list applied changesets

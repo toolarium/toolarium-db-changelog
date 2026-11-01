@@ -31,4 +31,14 @@ public class ChangelogExecutorFactoryTest {
                 ChangelogTrackerFactory.getInstance().getTracker("TEST_TABLE", "0.0.1"),
                 ChangelogChecksumGeneratorFactory.getInstance().getChecksumGenerator()));
     }
+
+
+    /**
+     * Test rollback executor creation.
+     */
+    @Test
+    void testRollbackExecutorFactory() {
+        assertNotNull(ChangelogExecutorFactory.getInstance().getRollbackExecutor(
+                ChangelogTrackerFactory.getInstance().getTracker("TEST_TABLE", "0.0.1")));
+    }
 }

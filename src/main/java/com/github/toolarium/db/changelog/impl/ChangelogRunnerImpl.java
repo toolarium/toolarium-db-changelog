@@ -17,6 +17,7 @@ import com.github.toolarium.db.changelog.impl.checksum.ChangelogChecksumGenerato
 import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
 import com.github.toolarium.db.changelog.impl.executor.ChangelogExecutorFactory;
 import com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor;
+import com.github.toolarium.db.changelog.impl.executor.IChangelogRollbackExecutor;
 import com.github.toolarium.db.changelog.impl.lock.ChangelogLockFactory;
 import com.github.toolarium.db.changelog.impl.lock.IChangelogLock;
 import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
@@ -27,6 +28,7 @@ import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,7 @@ public class ChangelogRunnerImpl implements IChangelogRunner {
     private final IChangelogTracker tracker;
     private final IChangelogChecksumGenerator checksumGenerator;
     private final IChangelogExecutor executor;
+    private final IChangelogRollbackExecutor rollbackExecutor;
     private final IChangelogLock lock;
     private final ChangelogParserFactory parserFactory;
     private IChangelog changelog;
@@ -56,8 +59,9 @@ public class ChangelogRunnerImpl implements IChangelogRunner {
         this.tracker = ChangelogTrackerFactory.getInstance().getTracker(config.getTrackingTableName(), Version.VERSION);
         this.checksumGenerator = ChangelogChecksumGeneratorFactory.getInstance().getChecksumGenerator();
         this.executor = ChangelogExecutorFactory.getInstance().getExecutor(tracker, checksumGenerator);
+        this.rollbackExecutor = ChangelogExecutorFactory.getInstance().getRollbackExecutor(tracker);
         this.lock = ChangelogLockFactory.getInstance().getChangelogLock();
-        this.parserFactory = new ChangelogParserFactory();
+        this.parserFactory = ChangelogParserFactory.getInstance();
         this.changelog = loadChangelog();
     }
 
@@ -83,9 +87,7 @@ public class ChangelogRunnerImpl implements IChangelogRunner {
      */
     @Override
     public void update(int count) throws ChangelogException {
-        if (changelog == null) {
-            throw new ChangelogException("No changelog configured. Set a changelog before calling update().");
-        }
+        ensureChangelog();
 
         try {
             lock.acquireLock();
@@ -101,6 +103,93 @@ public class ChangelogRunnerImpl implements IChangelogRunner {
             lock.releaseLock();
         }
     }
+
+    /**
+     * @see com.github.toolarium.db.changelog.IChangelogRunner#rollback(int)
+     */
+    @Override
+    public void rollback(int count) throws ChangelogException {
+        ensureChangelog();
+        try {
+            lock.acquireLock();
+            try (Connection connection = config.getDataSource().getConnection()) {
+                tracker.ensureTrackingTable(connection);
+                rollbackExecutor.rollback(connection, changelog, count);
+            }
+        } catch (SQLException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Rollback failed: " + e.getMessage(), e);
+            }
+            throw new ChangelogException("Rollback failed.", e);
+        } finally {
+            lock.releaseLock();
+        }
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.IChangelogRunner#rollback(String)
+     */
+    @Override
+    public void rollback(String tag) throws ChangelogException {
+        ensureChangelog();
+        try {
+            lock.acquireLock();
+            try (Connection connection = config.getDataSource().getConnection()) {
+                tracker.ensureTrackingTable(connection);
+                rollbackExecutor.rollbackToTag(connection, changelog, tag);
+            }
+        } catch (SQLException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Rollback to tag failed: " + e.getMessage(), e);
+            }
+            throw new ChangelogException("Rollback to tag failed.", e);
+        } finally {
+            lock.releaseLock();
+        }
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.IChangelogRunner#rollback(Instant)
+     */
+    @Override
+    public void rollback(Instant dateTime) throws ChangelogException {
+        ensureChangelog();
+        try {
+            lock.acquireLock();
+            try (Connection connection = config.getDataSource().getConnection()) {
+                tracker.ensureTrackingTable(connection);
+                rollbackExecutor.rollbackToDate(connection, changelog, dateTime);
+            }
+        } catch (SQLException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Rollback to date failed: " + e.getMessage(), e);
+            }
+            throw new ChangelogException("Rollback to date failed.", e);
+        } finally {
+            lock.releaseLock();
+        }
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.IChangelogRunner#generateRollbackSql(int)
+     */
+    @Override
+    public List<String> generateRollbackSql(int count) throws ChangelogException {
+        ensureChangelog();
+        try (Connection connection = config.getDataSource().getConnection()) {
+            tracker.ensureTrackingTable(connection);
+            return rollbackExecutor.generateRollbackSql(connection, changelog, count);
+        } catch (SQLException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Generate rollback SQL failed: " + e.getMessage(), e);
+            }
+            throw new ChangelogException("Generate rollback SQL failed.", e);
+        }
+    }
+
 
     /**
      * @see com.github.toolarium.db.changelog.IChangelogRunner#tag(String)
@@ -167,6 +256,18 @@ public class ChangelogRunnerImpl implements IChangelogRunner {
             throw new ChangelogException("Failed to clear checksums.", e);
         }
     }
+
+    /**
+     * Ensure a changelog is configured.
+     *
+     * @throws ChangelogException if no changelog is available
+     */
+    private void ensureChangelog() throws ChangelogException {
+        if (changelog == null) {
+            throw new ChangelogException("No changelog configured. Set a changelog before calling this operation.");
+        }
+    }
+
 
     /**
      * Load the changelog from the configured path.

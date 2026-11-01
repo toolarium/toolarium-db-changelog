@@ -16,23 +16,45 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 /**
- * Selects the appropriate parser based on file extension.
+ * Singleton factory that selects the appropriate parser based on file extension.
  * Parsers are registered in priority order: DB-Changelog format first, then external formats.
  *
  * @author patrick
  */
-public class ChangelogParserFactory {
+public final class ChangelogParserFactory {
     private static final Logger LOG = LoggerFactory.getLogger(ChangelogParserFactory.class);
+
+
+    /**
+     * Private class, the only instance of the singleton which will be created by accessing the holder class.
+     *
+     * @author patrick
+     */
+    private static final class HOLDER {
+        static final ChangelogParserFactory INSTANCE = new ChangelogParserFactory();
+    }
+
     private final List<IChangelogParser> parsers;
 
 
     /**
-     * Constructor for ChangelogParserFactory
+     * Private constructor
      */
-    public ChangelogParserFactory() {
+    private ChangelogParserFactory() {
         this.parsers = new ArrayList<>();
         registerDefaultParsers();
+    }
+
+
+    /**
+     * Get the instance.
+     *
+     * @return the instance
+     */
+    public static ChangelogParserFactory getInstance() {
+        return HOLDER.INSTANCE;
     }
 
 

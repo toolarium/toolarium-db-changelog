@@ -136,7 +136,7 @@ public class YamlChangelogParser implements IChangelogParser {
         }
 
         try {
-            ChangelogParserFactory factory = new ChangelogParserFactory();
+            ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
             IChangelogParser parser = factory.getParser(resolvedPath);
             IChangelog included = parser.parse(input, resolvedPath, parameterResolver);
             return included.getChangelogSets();

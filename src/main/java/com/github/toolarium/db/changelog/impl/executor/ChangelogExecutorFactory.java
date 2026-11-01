@@ -8,6 +8,7 @@ package com.github.toolarium.db.changelog.impl.executor;
 
 import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
 import com.github.toolarium.db.changelog.impl.executor.impl.ChangelogExecutorImpl;
+import com.github.toolarium.db.changelog.impl.executor.impl.ChangelogRollbackExecutorImpl;
 import com.github.toolarium.db.changelog.impl.sql.ChangelogSqlGeneratorFactory;
 import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
 
@@ -55,6 +56,18 @@ public final class ChangelogExecutorFactory {
      */
     public IChangelogExecutor getExecutor(IChangelogTracker tracker, IChangelogChecksumGenerator checksumGenerator) {
         return new ChangelogExecutorImpl(tracker, checksumGenerator,
+                ChangelogSqlGeneratorFactory.getInstance().getSqlGenerator());
+    }
+
+
+    /**
+     * Get a changelog rollback executor.
+     *
+     * @param tracker the tracking table manager
+     * @return the rollback executor instance
+     */
+    public IChangelogRollbackExecutor getRollbackExecutor(IChangelogTracker tracker) {
+        return new ChangelogRollbackExecutorImpl(tracker,
                 ChangelogSqlGeneratorFactory.getInstance().getSqlGenerator());
     }
 }

@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-rollback generation for structured DDL changes.
 - Generic ANSI SQL generator for all DDL change types.
 - Level 1 SQL rollback generator: auto-generates rollback for common raw SQL DDL patterns.
+- Rollback engine: rollback by count, tag, or date.
+- Rollback priority: manual rollback entries, auto-rollback, Level 1 SQL rollback.
+- Dry-run rollback via `generateRollbackSql()`.
 - Support for runAlways, runOnChange, and failOnError changeset attributes.
 - No-op lock implementation (leader-election integration planned).
 - Builder-based configuration via `ChangelogRunnerBuilder`.

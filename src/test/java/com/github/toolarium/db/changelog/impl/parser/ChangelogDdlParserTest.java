@@ -57,7 +57,7 @@ public class ChangelogDdlParserTest {
      */
     @Test
     void testParseDdlEntries() throws Exception {
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
         IChangelogParser parser = factory.getParser(DDL_CHANGELOG);
 
         InputStream input = getClass().getClassLoader().getResourceAsStream(DDL_CHANGELOG);

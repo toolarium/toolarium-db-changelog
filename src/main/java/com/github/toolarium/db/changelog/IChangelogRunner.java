@@ -9,6 +9,7 @@ package com.github.toolarium.db.changelog;
 import com.github.toolarium.db.changelog.dto.IChangelogChangeSetStatus;
 import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -32,6 +33,43 @@ public interface IChangelogRunner {
      * @throws ChangelogException if execution fails
      */
     void update(int count) throws ChangelogException;
+
+    /**
+     * Rollback the last count applied changesets.
+     *
+     * @param count the number of changesets to rollback
+     * @throws ChangelogException if rollback fails
+     */
+    void rollback(int count) throws ChangelogException;
+
+
+    /**
+     * Rollback all changesets applied after the given tag.
+     *
+     * @param tag the tag name to rollback to
+     * @throws ChangelogException if rollback fails
+     */
+    void rollback(String tag) throws ChangelogException;
+
+
+    /**
+     * Rollback all changesets applied after the given date.
+     *
+     * @param dateTime the point in time to rollback to
+     * @throws ChangelogException if rollback fails
+     */
+    void rollback(Instant dateTime) throws ChangelogException;
+
+
+    /**
+     * Generate the rollback SQL for the last count changesets without executing.
+     *
+     * @param count the number of changesets
+     * @return the list of rollback SQL statements
+     * @throws ChangelogException if generation fails
+     */
+    List<String> generateRollbackSql(int count) throws ChangelogException;
+
 
     /**
      * Tag the current database state.

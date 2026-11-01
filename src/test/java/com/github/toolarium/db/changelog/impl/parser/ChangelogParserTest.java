@@ -8,6 +8,7 @@ package com.github.toolarium.db.changelog.impl.parser;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -59,7 +60,7 @@ public class ChangelogParserTest {
      */
     @Test
     void testParseYamlChangelog() throws Exception {
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
         IChangelogParser parser = factory.getParser(TEST_CHANGELOG_PATH);
         assertNotNull(parser);
 
@@ -87,7 +88,7 @@ public class ChangelogParserTest {
      */
     @Test
     void testPropertySubstitution() throws Exception {
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
         IChangelogParser parser = factory.getParser(TEST_CHANGELOG_PATH);
 
         InputStream input = getClass().getClassLoader().getResourceAsStream(TEST_CHANGELOG_PATH);
@@ -108,7 +109,7 @@ public class ChangelogParserTest {
      */
     @Test
     void testDefaultAuthor() throws Exception {
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
         IChangelogParser parser = factory.getParser(TEST_CHANGELOG_PATH);
 
         InputStream input = getClass().getClassLoader().getResourceAsStream(TEST_CHANGELOG_PATH);
@@ -131,7 +132,7 @@ public class ChangelogParserTest {
         String yaml = "changesets:\n  - id: test\n    changes:\n      - sql: \"SELECT 1\"\n";
         InputStream input = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
 
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
         IChangelogParser parser = factory.getParser("test.db.yaml");
 
         assertThrows(ChangelogParseException.class, () ->
@@ -149,7 +150,7 @@ public class ChangelogParserTest {
         String yaml = "format: wrong-format/1.0\nchangesets:\n  - id: test\n    changes:\n      - sql: \"SELECT 1\"\n";
         InputStream input = new ByteArrayInputStream(yaml.getBytes(StandardCharsets.UTF_8));
 
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
         IChangelogParser parser = factory.getParser("test.db.yaml");
 
         assertThrows(ChangelogParseException.class, () ->
@@ -164,7 +165,7 @@ public class ChangelogParserTest {
      */
     @Test
     void testParserFactoryExtensionDetection() throws Exception {
-        ChangelogParserFactory factory = new ChangelogParserFactory();
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
 
         assertNotNull(factory.getParser("changelog.db.yaml"));
         assertNotNull(factory.getParser("changelog.db.yml"));
@@ -174,6 +175,17 @@ public class ChangelogParserTest {
         assertNotNull(factory.getParser("path/to/changelog.db.yaml"));
 
         assertThrows(ChangelogParseException.class, () -> factory.getParser("changelog.unknown"));
+    }
+
+
+    /**
+     * Test parser factory is singleton.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testParserFactorySingleton() throws Exception {
+        assertSame(ChangelogParserFactory.getInstance(), ChangelogParserFactory.getInstance());
     }
 
 
