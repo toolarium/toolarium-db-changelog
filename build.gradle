@@ -16,6 +16,10 @@ dependencies {
     implementation "org.slf4j:slf4j-api:${commonGradleSlf4jApiVersion}"
     testImplementation "ch.qos.logback:logback-classic:${commonGradleLogbackVersion}"
 
+    // parsing
+    implementation 'org.yaml:snakeyaml:2.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+
     // testing
     testImplementation 'com.h2database:h2:2.4.240'
 }

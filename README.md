@@ -1,85 +1,118 @@
+[![License: MPL-2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://github.com/toolarium/toolarium-db-changelog/blob/master/LICENSE)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.toolarium/toolarium-db-changelog/0.0.1)](https://search.maven.org/artifact/com.github.toolarium/toolarium-db-changelog/0.0.1/jar)
+[![javadoc](https://javadoc.io/badge2/com.github.toolarium/toolarium-db-changelog/javadoc.svg)](https://javadoc.io/doc/com.github.toolarium/toolarium-db-changelog)
+
 # toolarium-db-changelog
 
-Database changelog management library.
+A Java library for automated database schema migrations and rollbacks. It provides its own changelog format (`.db.yaml`, `.db.xml`, `.db.json`) and can import external changelog formats for migration compatibility. Distributed locking is handled by [toolarium-leader-election](https://github.com/toolarium/toolarium-leader-election).
 
-## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+## Features
 
-### Prerequisites
+- **Automated migrations**: apply, rollback, tag, sync, validate, and dry-run changesets
+- **Own changelog format**: clean `.db.yaml`, `.db.xml`, and `.db.json` with property substitution
+- **External format import**: parse and migrate from external changelog formats (XML, YAML, JSON, SQL)
+- **Distributed locking**: via `toolarium-leader-election` (self-healing, no stale locks)
+- **SHA-256 checksums**: stable algorithm, no version prefix
+- **Rollback automation**: SQL parsing, pre-execution snapshots, validation enforcement
+- **All major databases**: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, H2, DB2, and more
 
-What things you need to install the software and how to install them
 
-```
-Give examples
-```
+## Adding the library
 
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
-```
-Give the example
+**Gradle**
+```gradle
+implementation 'com.github.toolarium:toolarium-db-changelog:0.0.1'
 ```
 
-And repeat
-
-```
-until finished
-```
-
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
-```
-Give an example
+**Maven**
+```xml
+<dependency>
+    <groupId>com.github.toolarium</groupId>
+    <artifactId>toolarium-db-changelog</artifactId>
+    <version>0.0.1</version>
+</dependency>
 ```
 
-### And coding style tests
+The library brings `slf4j-api`, `snakeyaml`, and `jackson-databind` as transitive dependencies. You must provide an SLF4J binding (e.g., Logback) at runtime.
 
-Explain what these tests test and why
 
+## Quick start
+
+```java
+// Minimal usage
+IChangelogRunner runner = ChangelogRunnerBuilder.builder()
+    .dataSource(dataSource)
+    .changelog("classpath:db/changelog/changelog-master.db.yaml")
+    .build();
+
+runner.update();
 ```
-Give an example
+
+**Example changelog** (`changelog-master.db.yaml`):
+```yaml
+format: toolarium-db-changelog/1.0
+properties:
+  prefix: app_
+
+changesets:
+  - id: create-users
+    changes:
+      - sql: "CREATE TABLE ${prefix}users (id INT PRIMARY KEY, name VARCHAR(100))"
+    rollback:
+      - sql: "DROP TABLE ${prefix}users"
+
+  - id: add-email
+    changes:
+      - sql: "ALTER TABLE ${prefix}users ADD COLUMN email VARCHAR(255)"
 ```
 
-## Deployment
 
-Add additional notes about how to deploy this on a live system
+## API
+
+```java
+runner.update();                         // apply all pending changesets
+runner.update(5);                        // apply up to 5 changesets
+runner.tag("v1.0");                      // tag current state
+runner.sync();                           // mark all pending as executed
+runner.history();                        // list applied changesets
+runner.clearChecksums();                 // reset checksums
+```
+
+
+## Supported changelog formats
+
+| Format | Extension | Description |
+|---|---|---|
+| DB-Changelog YAML | `.db.yaml` / `.db.yml` | Recommended native format |
+| DB-Changelog XML | `.db.xml` | Native XML format |
+| DB-Changelog JSON | `.db.json` | Native JSON format |
+| External SQL | `.sql` | Formatted SQL with `--changeset` directives |
+
 
 ## Built With
 
 * [cb](https://github.com/toolarium/common-build) - The toolarium common build
 
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/toolarium/toolarium-db-changelog/tags).
 
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## License
 
-This project is licensed under the MIT License: https://mit-license.org - see the [LICENSE](LICENSE) file for details
+This project is licensed under the MPL-2.0 License, see the [LICENSE](LICENSE) file for details.
 
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+| Action | Allowed | Required | Not Allowed |
+|---|---|---|---|
+| Commercial use | Yes | | |
+| Private use | Yes | | |
+| Modify source | Yes | | |
+| Distribute | Yes | | |
+| Mix with proprietary code | Yes | | |
+| Share modified MPL files | | Yes | |
+| Keep license notices | | Yes | |
+| Remove copyright notices | | | Yes |
+| Hold authors liable | | | Yes |
+| Use authors' trademarks | | | Yes |

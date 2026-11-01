@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dbChangelog format="toolarium-db-changelog/1.0">
+    <properties>
+        <property name="table.prefix" value="xmltest_"/>
+    </properties>
+
+    <changeSet id="create-table" author="testauthor" comment="Create table via XML">
+        <sql>CREATE TABLE ${table.prefix}items (id INT PRIMARY KEY, name VARCHAR(100))</sql>
+    </changeSet>
+
+    <changeSet id="insert-item">
+        <sql>INSERT INTO ${table.prefix}items (id, name) VALUES (1, 'TestItem')</sql>
+        <rollback>
+            <sql>DELETE FROM ${table.prefix}items WHERE id = 1</sql>
+        </rollback>
+    </changeSet>
+</dbChangelog>

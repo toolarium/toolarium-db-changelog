@@ -1,0 +1,6 @@
+format: toolarium-db-changelog/1.0
+
+changesets:
+  - id: included-changeset
+    changes:
+      - sql: "CREATE TABLE ${table.prefix}child (id INT PRIMARY KEY, description VARCHAR(50))"

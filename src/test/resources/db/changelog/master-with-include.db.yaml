@@ -1,0 +1,11 @@
+format: toolarium-db-changelog/1.0
+properties:
+  table.prefix: inc_
+
+include:
+  - path: included-changelog.db.yaml
+
+changesets:
+  - id: master-changeset
+    changes:
+      - sql: "CREATE TABLE ${table.prefix}master (id INT PRIMARY KEY)"

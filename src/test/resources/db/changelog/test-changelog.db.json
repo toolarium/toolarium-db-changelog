@@ -1,0 +1,25 @@
+{
+  "format": "toolarium-db-changelog/1.0",
+  "properties": {
+    "table.prefix": "jsontest_"
+  },
+  "changesets": [
+    {
+      "id": "create-table",
+      "author": "testauthor",
+      "comment": "Create table via JSON",
+      "changes": [
+        { "sql": "CREATE TABLE ${table.prefix}products (id INT PRIMARY KEY, name VARCHAR(100))" }
+      ]
+    },
+    {
+      "id": "insert-product",
+      "changes": [
+        { "sql": "INSERT INTO ${table.prefix}products (id, name) VALUES (1, 'TestProduct')" }
+      ],
+      "rollback": [
+        { "sql": "DELETE FROM ${table.prefix}products WHERE id = 1" }
+      ]
+    }
+  ]
+}

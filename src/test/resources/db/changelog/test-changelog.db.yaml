@@ -1,0 +1,23 @@
+format: toolarium-db-changelog/1.0
+properties:
+  table.prefix: test_
+
+changesets:
+  - id: create-users-table
+    author: testauthor
+    comment: "Create the users table"
+    context: ["dev", "test"]
+    changes:
+      - sql: "CREATE TABLE ${table.prefix}users (id INT PRIMARY KEY, name VARCHAR(100), email VARCHAR(255))"
+    rollback:
+      - sql: "DROP TABLE ${table.prefix}users"
+
+  - id: insert-admin
+    changes:
+      - sql: "INSERT INTO ${table.prefix}users (id, name, email) VALUES (1, 'Admin', 'admin@example.com')"
+
+  - id: add-phone-column
+    author: testauthor
+    comment: "Add phone column"
+    changes:
+      - sql: "ALTER TABLE ${table.prefix}users ADD COLUMN phone VARCHAR(20)"
