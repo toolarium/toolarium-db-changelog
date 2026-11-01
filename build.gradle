@@ -2,7 +2,6 @@
  * build.gradle
  *
  * Copyright by toolarium-db-changelog, all rights reserved.
- * MIT License: https://mit-license.org
  */
 apply from: "https://raw.githubusercontent.com/toolarium/common-gradle-build/master/gradle/common.gradle"
 
@@ -13,11 +12,18 @@ apply from: "https://raw.githubusercontent.com/toolarium/common-gradle-build/mas
 dependencies {
     // see https://docs.gradle.org/current/userguide/java_library_plugin.html
 
-    // utilities
-    //implementation "net.sf.jptools:jptools:${commonGradleJptoolsVersion}"
-    //implementation "net.sf.jptools:jptools:${commonGradleJptoolsVersion}:slf4j-redirect"
-
     // logging
     implementation "org.slf4j:slf4j-api:${commonGradleSlf4jApiVersion}"
-    testRuntimeOnly "ch.qos.logback:logback-classic:${commonGradleLogbackVersion}"
+    testImplementation "ch.qos.logback:logback-classic:${commonGradleLogbackVersion}"
+
+    // testing
+    testImplementation 'com.h2database:h2:2.4.240'
+}
+
+
+/************************************************************************************************************************
+ * Suppress obsolete source/target warnings when compiling with a newer JDK
+ ************************************************************************************************************************/
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:-options'
 }
