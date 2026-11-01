@@ -208,4 +208,103 @@ public class GenericChangelogSqlGeneratorTest {
         assertTrue(generator.supports(new DropIndexChangelogEntry(TABLE_T, "i"), null));
         assertFalse(generator.supports(new com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry("SELECT 1"), null));
     }
+
+
+    /**
+     * Test RENAME TABLE SQL generation.
+     */
+    @Test
+    void testRenameTable() {
+        var entry = new com.github.toolarium.db.changelog.dto.table.RenameTableChangelogEntry("old_t", "new_t");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("ALTER TABLE old_t RENAME TO new_t", sql.get(0));
+    }
+
+
+    /**
+     * Test RENAME COLUMN SQL generation.
+     */
+    @Test
+    void testRenameColumn() {
+        var entry = new com.github.toolarium.db.changelog.dto.column.RenameColumnChangelogEntry(TABLE_USERS, "old_c", "new_c");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("ALTER TABLE users RENAME COLUMN old_c TO new_c", sql.get(0));
+    }
+
+
+    /**
+     * Test MODIFY COLUMN SQL generation.
+     */
+    @Test
+    void testModifyColumn() {
+        var entry = new com.github.toolarium.db.changelog.dto.column.ModifyColumnChangelogEntry(TABLE_USERS, "name", "VARCHAR(500)");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("ALTER TABLE users ALTER COLUMN name VARCHAR(500)", sql.get(0));
+    }
+
+
+    /**
+     * Test CREATE SEQUENCE SQL generation.
+     */
+    @Test
+    void testCreateSequence() {
+        var entry = new com.github.toolarium.db.changelog.dto.sequence.CreateSequenceChangelogEntry("user_seq");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("CREATE SEQUENCE user_seq", sql.get(0));
+    }
+
+
+    /**
+     * Test DROP SEQUENCE SQL generation.
+     */
+    @Test
+    void testDropSequence() {
+        var entry = new com.github.toolarium.db.changelog.dto.sequence.DropSequenceChangelogEntry("user_seq");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("DROP SEQUENCE user_seq", sql.get(0));
+    }
+
+
+    /**
+     * Test CREATE VIEW SQL generation.
+     */
+    @Test
+    void testCreateView() {
+        var entry = new com.github.toolarium.db.changelog.dto.view.CreateViewChangelogEntry("v_users", "SELECT id FROM users");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("CREATE OR REPLACE VIEW v_users AS SELECT id FROM users", sql.get(0));
+    }
+
+
+    /**
+     * Test DROP VIEW SQL generation.
+     */
+    @Test
+    void testDropView() {
+        var entry = new com.github.toolarium.db.changelog.dto.view.DropViewChangelogEntry("v_users");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("DROP VIEW v_users", sql.get(0));
+    }
+
+
+    /**
+     * Test ADD NOT NULL SQL generation.
+     */
+    @Test
+    void testAddNotNull() {
+        var entry = new com.github.toolarium.db.changelog.dto.constraint.AddNotNullConstraintChangelogEntry(TABLE_USERS, "email");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("ALTER TABLE users ALTER COLUMN email SET NOT NULL", sql.get(0));
+    }
+
+
+    /**
+     * Test DROP NOT NULL SQL generation.
+     */
+    @Test
+    void testDropNotNull() {
+        var entry = new com.github.toolarium.db.changelog.dto.constraint.DropNotNullConstraintChangelogEntry(TABLE_USERS, "email");
+        List<String> sql = generator.generateSql(entry);
+        assertEquals("ALTER TABLE users ALTER COLUMN email DROP NOT NULL", sql.get(0));
+    }
 }

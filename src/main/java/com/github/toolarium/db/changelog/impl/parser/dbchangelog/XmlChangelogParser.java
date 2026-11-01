@@ -15,10 +15,12 @@ import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
+import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -149,10 +151,20 @@ public class XmlChangelogParser implements IChangelogParser {
                     inRollback = true;
                 } else if (ELEMENT_SQL.equals(name)) {
                     String sql = parameterResolver.resolve(reader.getElementText().trim());
+                    IChangelogEntry sqlEntry = new SqlChangelogEntry(sql);
                     if (inRollback) {
-                        rollbackEntries.add(new SqlChangelogEntry(sql));
+                        rollbackEntries.add(sqlEntry);
                     } else {
-                        entries.add(new SqlChangelogEntry(sql));
+                        entries.add(sqlEntry);
+                    }
+                } else if (!ELEMENT_CHANGE_SET.equals(name) && !ELEMENT_ROLLBACK.equals(name)) {
+                    Map<String, Object> entryMap = parseXmlEntryToMap(name, reader, parameterResolver);
+                    IChangelogEntry ddlEntry = ChangelogEntryParserUtil.getInstance()
+                            .parseEntry(entryMap, parameterResolver, physicalPath);
+                    if (inRollback) {
+                        rollbackEntries.add(ddlEntry);
+                    } else {
+                        entries.add(ddlEntry);
                     }
                 }
             } else if (event == XMLStreamConstants.END_ELEMENT) {
@@ -171,6 +183,88 @@ public class XmlChangelogParser implements IChangelogParser {
                 !"false".equals(attrs.getOrDefault("failOnError", "true")),
                 !"false".equals(attrs.getOrDefault("runInTransaction", "true")),
                 parseCommaSeparated(attrs.get("context")), Collections.emptyList());
+    }
+
+
+    /**
+     * Parse an XML element into a map structure compatible with ChangelogEntryParserUtil.
+     * Reads attributes as map keys and child elements as nested structures.
+     *
+     * @param elementName the element name (e.g., "createTable", "addColumn")
+     * @param reader the XML stream reader
+     * @param parameterResolver the parameter resolver
+     * @return a map like {"createTable": {"tableName": "...", "columns": [...]}}
+     * @throws Exception if parsing fails
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseXmlEntryToMap(String elementName, XMLStreamReader reader,
+                                                   IChangelogParameterResolver parameterResolver) throws Exception {
+        Map<String, Object> innerMap = new HashMap<>();
+
+        // Read attributes
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            innerMap.put(reader.getAttributeLocalName(i), reader.getAttributeValue(i));
+        }
+
+        // Read child elements (columns, constraints)
+        List<Map<String, Object>> columns = new ArrayList<>();
+        while (reader.hasNext()) {
+            int event = reader.next();
+            if (event == XMLStreamConstants.START_ELEMENT) {
+                String childName = reader.getLocalName();
+                if ("column".equals(childName)) {
+                    columns.add(parseXmlColumnToMap(reader));
+                }
+            } else if (event == XMLStreamConstants.END_ELEMENT) {
+                if (elementName.equals(reader.getLocalName())) {
+                    break;
+                }
+            }
+        }
+
+        if (!columns.isEmpty()) {
+            innerMap.put("columns", columns);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put(elementName, innerMap);
+        return result;
+    }
+
+
+    /**
+     * Parse an XML column element into a map.
+     *
+     * @param reader the XML stream reader positioned at the column element
+     * @return the column map
+     * @throws Exception if parsing fails
+     */
+    private Map<String, Object> parseXmlColumnToMap(XMLStreamReader reader) throws Exception {
+        Map<String, Object> colMap = new HashMap<>();
+
+        for (int i = 0; i < reader.getAttributeCount(); i++) {
+            colMap.put(reader.getAttributeLocalName(i), reader.getAttributeValue(i));
+        }
+
+        // Read constraints child element
+        while (reader.hasNext()) {
+            int event = reader.next();
+            if (event == XMLStreamConstants.START_ELEMENT) {
+                if ("constraints".equals(reader.getLocalName())) {
+                    Map<String, Object> constraints = new HashMap<>();
+                    for (int i = 0; i < reader.getAttributeCount(); i++) {
+                        constraints.put(reader.getAttributeLocalName(i), reader.getAttributeValue(i));
+                    }
+                    colMap.put("constraints", constraints);
+                }
+            } else if (event == XMLStreamConstants.END_ELEMENT) {
+                if ("column".equals(reader.getLocalName())) {
+                    break;
+                }
+            }
+        }
+
+        return colMap;
     }
 
 

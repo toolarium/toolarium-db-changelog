@@ -16,6 +16,7 @@ import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
+import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
 import java.io.File;
 import java.io.FileInputStream;
@@ -278,31 +279,16 @@ public class YamlChangelogParser implements IChangelogParser {
 
     /**
      * Parse a single changelog entry from a map.
-     * Currently supports "sql" and "sqlFile". Additional change types will be added in Phase 3.
      *
-     * @param entryMap the entry map (e.g., {"sql": "CREATE TABLE ..."})
+     * @param entryMap the entry map (e.g., {"sql": "..."}, {"createTable": {...}})
      * @param parameterResolver the parameter resolver
      * @param physicalPath the file path
      * @return the parsed entry
      * @throws ChangelogParseException if the entry type is unknown
      */
-    @SuppressWarnings("unchecked")
     private IChangelogEntry parseEntry(Map<String, Object> entryMap, IChangelogParameterResolver parameterResolver,
                                        String physicalPath) throws ChangelogParseException {
-        if (entryMap.containsKey("sql")) {
-            Object sqlValue = entryMap.get("sql");
-            String sql = parameterResolver.resolve(sqlValue.toString());
-            return new SqlChangelogEntry(sql);
-        }
-
-        if (entryMap.containsKey("tagDatabase")) {
-            Object tagValue = entryMap.get("tagDatabase");
-            String sql = "-- tag: " + parameterResolver.resolve(tagValue.toString());
-            return new SqlChangelogEntry(sql, false, ";", false, null);
-        }
-
-        String entryType = entryMap.keySet().iterator().next();
-        throw new ChangelogParseException("Unsupported change type [" + entryType + "] in [" + physicalPath + "]. " + "Additional change types will be available in a future version.");
+        return ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, parameterResolver, physicalPath);
     }
 
 

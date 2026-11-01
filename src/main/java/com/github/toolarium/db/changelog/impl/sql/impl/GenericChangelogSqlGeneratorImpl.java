@@ -10,10 +10,19 @@ import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.dto.column.AddColumnChangelogEntry;
 import com.github.toolarium.db.changelog.dto.column.DropColumnChangelogEntry;
 import com.github.toolarium.db.changelog.dto.column.IChangelogColumnDefinition;
+import com.github.toolarium.db.changelog.dto.column.ModifyColumnChangelogEntry;
+import com.github.toolarium.db.changelog.dto.column.RenameColumnChangelogEntry;
+import com.github.toolarium.db.changelog.dto.constraint.AddNotNullConstraintChangelogEntry;
+import com.github.toolarium.db.changelog.dto.constraint.DropNotNullConstraintChangelogEntry;
 import com.github.toolarium.db.changelog.dto.index.CreateIndexChangelogEntry;
 import com.github.toolarium.db.changelog.dto.index.DropIndexChangelogEntry;
+import com.github.toolarium.db.changelog.dto.sequence.CreateSequenceChangelogEntry;
+import com.github.toolarium.db.changelog.dto.sequence.DropSequenceChangelogEntry;
 import com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry;
 import com.github.toolarium.db.changelog.dto.table.DropTableChangelogEntry;
+import com.github.toolarium.db.changelog.dto.table.RenameTableChangelogEntry;
+import com.github.toolarium.db.changelog.dto.view.CreateViewChangelogEntry;
+import com.github.toolarium.db.changelog.dto.view.DropViewChangelogEntry;
 import com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -27,6 +36,8 @@ import java.util.List;
  * @author patrick
  */
 public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator {
+    /** ALTER TABLE prefix constant. */
+    protected static final String ALTER_TABLE = "ALTER TABLE ";
 
     /**
      * @see com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator#generateSql(IChangelogEntry)
@@ -51,6 +62,33 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
         if (entry instanceof DropIndexChangelogEntry) {
             return generateDropIndex((DropIndexChangelogEntry) entry);
         }
+        if (entry instanceof RenameTableChangelogEntry) {
+            return generateRenameTable((RenameTableChangelogEntry) entry);
+        }
+        if (entry instanceof RenameColumnChangelogEntry) {
+            return generateRenameColumn((RenameColumnChangelogEntry) entry);
+        }
+        if (entry instanceof ModifyColumnChangelogEntry) {
+            return generateModifyColumn((ModifyColumnChangelogEntry) entry);
+        }
+        if (entry instanceof AddNotNullConstraintChangelogEntry) {
+            return generateAddNotNull((AddNotNullConstraintChangelogEntry) entry);
+        }
+        if (entry instanceof DropNotNullConstraintChangelogEntry) {
+            return generateDropNotNull((DropNotNullConstraintChangelogEntry) entry);
+        }
+        if (entry instanceof CreateSequenceChangelogEntry) {
+            return generateCreateSequence((CreateSequenceChangelogEntry) entry);
+        }
+        if (entry instanceof DropSequenceChangelogEntry) {
+            return generateDropSequence((DropSequenceChangelogEntry) entry);
+        }
+        if (entry instanceof CreateViewChangelogEntry) {
+            return generateCreateView((CreateViewChangelogEntry) entry);
+        }
+        if (entry instanceof DropViewChangelogEntry) {
+            return generateDropView((DropViewChangelogEntry) entry);
+        }
 
         return Collections.emptyList();
     }
@@ -66,7 +104,16 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
                 || entry instanceof AddColumnChangelogEntry
                 || entry instanceof DropColumnChangelogEntry
                 || entry instanceof CreateIndexChangelogEntry
-                || entry instanceof DropIndexChangelogEntry;
+                || entry instanceof DropIndexChangelogEntry
+                || entry instanceof RenameTableChangelogEntry
+                || entry instanceof RenameColumnChangelogEntry
+                || entry instanceof ModifyColumnChangelogEntry
+                || entry instanceof AddNotNullConstraintChangelogEntry
+                || entry instanceof DropNotNullConstraintChangelogEntry
+                || entry instanceof CreateSequenceChangelogEntry
+                || entry instanceof DropSequenceChangelogEntry
+                || entry instanceof CreateViewChangelogEntry
+                || entry instanceof DropViewChangelogEntry;
     }
 
 
@@ -141,7 +188,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
         List<String> statements = new ArrayList<>();
         for (IChangelogColumnDefinition col : entry.getColumns()) {
             StringBuilder sql = new StringBuilder();
-            sql.append("ALTER TABLE ").append(entry.getTableName());
+            sql.append(ALTER_TABLE).append(entry.getTableName());
             sql.append(" ADD COLUMN ").append(col.getName()).append(" ").append(col.getType());
 
             if (!col.isNullable()) {
@@ -168,7 +215,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
     protected List<String> generateDropColumn(DropColumnChangelogEntry entry) {
         List<String> statements = new ArrayList<>();
         for (String columnName : entry.getColumnNames()) {
-            statements.add("ALTER TABLE " + entry.getTableName() + " DROP COLUMN " + columnName);
+            statements.add(ALTER_TABLE + entry.getTableName() + " DROP COLUMN " + columnName);
         }
         return statements;
     }
@@ -201,5 +248,114 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      */
     protected List<String> generateDropIndex(DropIndexChangelogEntry entry) {
         return Collections.singletonList("DROP INDEX " + entry.getIndexName());
+    }
+
+
+    /**
+     * Generate ALTER TABLE RENAME SQL.
+     *
+     * @param entry the rename table entry
+     * @return the SQL statements
+     */
+    protected List<String> generateRenameTable(RenameTableChangelogEntry entry) {
+        return Collections.singletonList(
+                ALTER_TABLE + entry.getOldTableName() + " RENAME TO " + entry.getNewTableName());
+    }
+
+
+    /**
+     * Generate ALTER TABLE RENAME COLUMN SQL.
+     *
+     * @param entry the rename column entry
+     * @return the SQL statements
+     */
+    protected List<String> generateRenameColumn(RenameColumnChangelogEntry entry) {
+        return Collections.singletonList(
+                ALTER_TABLE + entry.getTableName() + " RENAME COLUMN "
+                        + entry.getOldColumnName() + " TO " + entry.getNewColumnName());
+    }
+
+
+    /**
+     * Generate ALTER TABLE ALTER COLUMN SQL.
+     *
+     * @param entry the modify column entry
+     * @return the SQL statements
+     */
+    protected List<String> generateModifyColumn(ModifyColumnChangelogEntry entry) {
+        return Collections.singletonList(
+                ALTER_TABLE + entry.getTableName() + " ALTER COLUMN "
+                        + entry.getColumnName() + " " + entry.getNewType());
+    }
+
+
+    /**
+     * Generate ALTER TABLE ALTER COLUMN SET NOT NULL SQL.
+     *
+     * @param entry the add not null entry
+     * @return the SQL statements
+     */
+    protected List<String> generateAddNotNull(AddNotNullConstraintChangelogEntry entry) {
+        return Collections.singletonList(
+                ALTER_TABLE + entry.getTableName() + " ALTER COLUMN "
+                        + entry.getColumnName() + " SET NOT NULL");
+    }
+
+
+    /**
+     * Generate ALTER TABLE ALTER COLUMN DROP NOT NULL SQL.
+     *
+     * @param entry the drop not null entry
+     * @return the SQL statements
+     */
+    protected List<String> generateDropNotNull(DropNotNullConstraintChangelogEntry entry) {
+        return Collections.singletonList(
+                ALTER_TABLE + entry.getTableName() + " ALTER COLUMN "
+                        + entry.getColumnName() + " DROP NOT NULL");
+    }
+
+
+    /**
+     * Generate CREATE SEQUENCE SQL.
+     *
+     * @param entry the create sequence entry
+     * @return the SQL statements
+     */
+    protected List<String> generateCreateSequence(CreateSequenceChangelogEntry entry) {
+        return Collections.singletonList("CREATE SEQUENCE " + entry.getSequenceName());
+    }
+
+
+    /**
+     * Generate DROP SEQUENCE SQL.
+     *
+     * @param entry the drop sequence entry
+     * @return the SQL statements
+     */
+    protected List<String> generateDropSequence(DropSequenceChangelogEntry entry) {
+        return Collections.singletonList("DROP SEQUENCE " + entry.getSequenceName());
+    }
+
+
+    /**
+     * Generate CREATE VIEW SQL.
+     *
+     * @param entry the create view entry
+     * @return the SQL statements
+     */
+    protected List<String> generateCreateView(CreateViewChangelogEntry entry) {
+        return Collections.singletonList(
+                "CREATE OR REPLACE VIEW " + entry.getViewName() + " AS " + entry.getSelectQuery());
+    }
+
+
+    /**
+     * Generate DROP VIEW SQL.
+     *
+     * @param entry the drop view entry
+     * @return the SQL statements
+     */
+    protected List<String> generateDropView(DropViewChangelogEntry entry) {
+        return Collections.singletonList("DROP VIEW " + entry.getViewName());
     }
 }

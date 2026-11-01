@@ -1,0 +1,38 @@
+format: toolarium-db-changelog/1.0
+properties:
+  prefix: ddl_
+
+changesets:
+  - id: create-customers
+    changes:
+      - createTable:
+          tableName: ${prefix}customers
+          columns:
+            - name: id
+              type: BIGINT
+              autoIncrement: true
+              constraints: { primaryKey: true, nullable: false }
+            - name: name
+              type: VARCHAR(200)
+              constraints: { nullable: false }
+            - name: email
+              type: VARCHAR(255)
+              constraints: { unique: true }
+            - name: created_at
+              type: TIMESTAMP
+              defaultValueComputed: CURRENT_TIMESTAMP
+
+  - id: add-phone
+    changes:
+      - addColumn:
+          tableName: ${prefix}customers
+          columns:
+            - name: phone
+              type: VARCHAR(20)
+
+  - id: create-email-index
+    changes:
+      - createIndex:
+          tableName: ${prefix}customers
+          indexName: idx_customers_email
+          columns: [email]

@@ -15,9 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Property substitution (`${property}`) in changelogs.
 - Include/includeAll resolution for composing changelogs from multiple files.
 - Parser factory with automatic format detection by file extension.
-- Structured DDL change types: createTable, dropTable, addColumn, dropColumn, createIndex, dropIndex.
+- Structured DDL change types: createTable, dropTable, addColumn, dropColumn, createIndex, dropIndex, renameTable, renameColumn, modifyColumn.
+- Constraint change types: addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull.
+- Sequence change types: createSequence, dropSequence.
+- View change types: createView, dropView.
 - Auto-rollback generation for structured DDL changes.
-- Generic ANSI SQL generator for DDL change types.
+- Generic ANSI SQL generator for all DDL change types.
+- Level 1 SQL rollback generator: auto-generates rollback for common raw SQL DDL patterns.
 - Support for runAlways, runOnChange, and failOnError changeset attributes.
 - No-op lock implementation (leader-election integration planned).
 - Builder-based configuration via `ChangelogRunnerBuilder`.

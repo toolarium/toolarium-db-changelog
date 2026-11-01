@@ -14,9 +14,9 @@ import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
 import com.github.toolarium.db.changelog.dto.IChangelog;
 import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
+import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -182,10 +182,9 @@ public class JsonChangelogParser implements IChangelogParser {
 
         List<IChangelogEntry> entries = new ArrayList<>();
         for (JsonNode entryNode : arrayNode) {
-            if (entryNode.has("sql")) {
-                String sql = parameterResolver.resolve(entryNode.get("sql").asText());
-                entries.add(new SqlChangelogEntry(sql));
-            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> entryMap = objectMapper.convertValue(entryNode, Map.class);
+            entries.add(ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, parameterResolver, physicalPath));
         }
 
         return entries;
