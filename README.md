@@ -49,7 +49,7 @@ IChangelogRunner runner = ChangelogRunnerBuilder.builder()
 runner.update();
 ```
 
-**Example changelog** (`changelog-master.db.yaml`):
+**Example changelog (YAML)** (`changelog-master.db.yaml`):
 ```yaml
 format: toolarium-db-changelog/1.0
 properties:
@@ -65,6 +65,33 @@ changesets:
   - id: add-email
     changes:
       - sql: "ALTER TABLE ${prefix}users ADD COLUMN email VARCHAR(255)"
+```
+
+**Example changelog (XML)** (`changelog-master.db.xml`):
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dbChangelog format="toolarium-db-changelog/1.0">
+    <properties>
+        <property name="prefix" value="app_"/>
+    </properties>
+
+    <changesets>
+        <changeset id="create-users">
+            <changes>
+                <sql>CREATE TABLE ${prefix}users (id INT PRIMARY KEY, name VARCHAR(100))</sql>
+            </changes>
+            <rollback>
+                <sql>DROP TABLE ${prefix}users</sql>
+            </rollback>
+        </changeset>
+
+        <changeset id="add-email">
+            <changes>
+                <sql>ALTER TABLE ${prefix}users ADD COLUMN email VARCHAR(255)</sql>
+            </changes>
+        </changeset>
+    </changesets>
+</dbChangelog>
 ```
 
 
