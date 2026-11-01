@@ -10,12 +10,14 @@ A Java library for automated database schema migrations and rollbacks. It provid
 ## Features
 
 - **Automated migrations**: apply, rollback, tag, sync, validate, and dry-run changesets
-- **Structured DDL changes**: createTable, dropTable, addColumn, dropColumn, createIndex, dropIndex with auto-rollback
+- **Structured DDL changes**: createTable, dropTable, addColumn, dropColumn, renameTable, renameColumn, modifyColumn, createIndex, dropIndex with auto-rollback
+- **Constraints**: addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull
+- **Sequences and views**: createSequence, dropSequence, createView, dropView
 - **Own changelog format**: clean `.db.yaml`, `.db.xml`, and `.db.json` with property substitution
 - **External format import**: parse and migrate from external changelog formats (XML, YAML, JSON, SQL)
 - **Distributed locking**: via `toolarium-leader-election` (self-healing, no stale locks)
 - **SHA-256 checksums**: stable algorithm, no version prefix
-- **Rollback automation**: auto-rollback for DDL, SQL parsing, pre-execution snapshots, validation enforcement
+- **Rollback automation**: auto-rollback for DDL, Level 1 SQL rollback generator for raw SQL, pre-execution snapshots, validation enforcement
 - **All major databases**: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, H2, DB2, and more
 
 
@@ -59,13 +61,40 @@ properties:
 changesets:
   - id: create-users
     changes:
-      - sql: "CREATE TABLE ${prefix}users (id INT PRIMARY KEY, name VARCHAR(100))"
-    rollback:
-      - sql: "DROP TABLE ${prefix}users"
+      - createTable:
+          tableName: ${prefix}users
+          columns:
+            - name: id
+              type: BIGINT
+              autoIncrement: true
+              constraints: { primaryKey: true, nullable: false }
+            - name: name
+              type: VARCHAR(100)
+              constraints: { nullable: false }
+            - name: email
+              type: VARCHAR(255)
+              constraints: { unique: true }
 
-  - id: add-email
+  - id: add-phone
     changes:
-      - sql: "ALTER TABLE ${prefix}users ADD COLUMN email VARCHAR(255)"
+      - addColumn:
+          tableName: ${prefix}users
+          columns:
+            - name: phone
+              type: VARCHAR(20)
+
+  - id: create-email-index
+    changes:
+      - createIndex:
+          tableName: ${prefix}users
+          indexName: idx_users_email
+          columns: [email]
+
+  - id: raw-sql-example
+    changes:
+      - sql: "INSERT INTO ${prefix}users (name, email) VALUES ('Admin', 'admin@example.com')"
+    rollback:
+      - sql: "DELETE FROM ${prefix}users WHERE email = 'admin@example.com'"
 ```
 
 **Example changelog (XML)** (`changelog-master.db.xml`):
