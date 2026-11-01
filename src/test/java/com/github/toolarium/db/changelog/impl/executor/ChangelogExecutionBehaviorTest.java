@@ -3,7 +3,7 @@
  *
  * Copyright by toolarium, all rights reserved.
  */
-package com.github.toolarium.db.changelog.impl;
+package com.github.toolarium.db.changelog.impl.executor;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,15 +19,15 @@ import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
 import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
 import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.SqlChangelogEntry;
+import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
+import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 
 /**
  * Tests for execution behavior: runAlways, runOnChange, failOnError, checksum, error handling.

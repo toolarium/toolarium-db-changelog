@@ -16,7 +16,7 @@ import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
 import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
 import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.SqlChangelogEntry;
+import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
 import java.sql.Connection;
 import java.sql.ResultSet;

@@ -3,8 +3,7 @@
  *
  * Copyright by toolarium, all rights reserved.
  */
-package com.github.toolarium.db.changelog;
-
+package com.github.toolarium.db.changelog.impl.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -12,13 +11,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.toolarium.db.changelog.ChangelogRunnerBuilder;
+import com.github.toolarium.db.changelog.IChangelogRunner;
 import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
 import com.github.toolarium.db.changelog.dto.IChangelog;
 import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
-import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
-import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.resolver.impl.ChangelogParameterResolverImpl;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

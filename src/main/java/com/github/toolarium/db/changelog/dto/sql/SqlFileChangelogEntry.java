@@ -3,7 +3,7 @@
  *
  * Copyright by toolarium, all rights reserved.
  */
-package com.github.toolarium.db.changelog.dto;
+package com.github.toolarium.db.changelog.dto.sql;
 
 
 /**
@@ -80,7 +80,7 @@ public class SqlFileChangelogEntry extends SqlChangelogEntry {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.dto.SqlChangelogEntry#getDescription()
+     * @see com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry#getDescription()
      */
     @Override
     public String getDescription() {

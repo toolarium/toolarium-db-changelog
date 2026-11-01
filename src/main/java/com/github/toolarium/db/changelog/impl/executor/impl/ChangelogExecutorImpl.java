@@ -12,11 +12,12 @@ import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.dto.IChangelogChangeSetIdentity;
 import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.SqlChangelogEntry;
+import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogChangeSetExecutionException;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
 import com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor;
+import com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator;
 import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -37,16 +38,21 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
     private static final Logger LOG = LoggerFactory.getLogger(ChangelogExecutorImpl.class);
     private final IChangelogTracker tracker;
     private final IChangelogChecksumGenerator checksumGenerator;
+    private final IChangelogSqlGenerator sqlGenerator;
+
 
     /**
      * Constructor for ChangelogExecutorImpl
      *
      * @param tracker the tracking table manager
      * @param checksumGenerator the checksum generator
+     * @param sqlGenerator the SQL generator for structured change types
      */
-    public ChangelogExecutorImpl(IChangelogTracker tracker, IChangelogChecksumGenerator checksumGenerator) {
+    public ChangelogExecutorImpl(IChangelogTracker tracker, IChangelogChecksumGenerator checksumGenerator,
+                                 IChangelogSqlGenerator sqlGenerator) {
         this.tracker = tracker;
         this.checksumGenerator = checksumGenerator;
+        this.sqlGenerator = sqlGenerator;
     }
 
     /**
@@ -185,27 +191,43 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
      */
     private void executeSqlEntry(Connection connection, IChangelogEntry entry) throws SQLException, ChangelogChangeSetExecutionException {
         if (entry instanceof SqlChangelogEntry) {
-            SqlChangelogEntry sqlChange = (SqlChangelogEntry) entry;
-            String sql = sqlChange.getSql();
-            if (sql == null || sql.trim().isEmpty()) {
-                return;
-            }
-
-            if (sqlChange.isSplitStatements()) {
-                String[] statements = sql.split(sqlChange.getEndDelimiter());
-                for (String stmt : statements) {
-                    String trimmed = stmt.trim();
-                    if (!trimmed.isEmpty()) {
-                        executeStatement(connection, trimmed);
-                    }
-                }
-            } else {
-                executeStatement(connection, sql.trim());
+            executeSqlChangelogEntry(connection, (SqlChangelogEntry) entry);
+        } else if (sqlGenerator.supports(entry, connection)) {
+            List<String> statements = sqlGenerator.generateSql(entry);
+            for (String stmt : statements) {
+                executeStatement(connection, stmt);
             }
         } else {
             throw new ChangelogChangeSetExecutionException("Unsupported entry type: " + entry.getClass().getName());
         }
     }
+
+    /**
+     * Execute a SqlChangelogEntry by splitting and running its SQL.
+     *
+     * @param connection the database connection
+     * @param sqlChange the SQL changelog entry
+     * @throws SQLException if execution fails
+     */
+    private void executeSqlChangelogEntry(Connection connection, SqlChangelogEntry sqlChange) throws SQLException {
+        String sql = sqlChange.getSql();
+        if (sql == null || sql.trim().isEmpty()) {
+            return;
+        }
+
+        if (sqlChange.isSplitStatements()) {
+            String[] statements = sql.split(sqlChange.getEndDelimiter());
+            for (String stmt : statements) {
+                String trimmed = stmt.trim();
+                if (!trimmed.isEmpty()) {
+                    executeStatement(connection, trimmed);
+                }
+            }
+        } else {
+            executeStatement(connection, sql.trim());
+        }
+    }
+
 
     /**
      * Execute a single SQL statement.

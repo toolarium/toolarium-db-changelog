@@ -3,9 +3,9 @@
  *
  * Copyright by toolarium, all rights reserved.
  */
-package com.github.toolarium.db.changelog.dto;
+package com.github.toolarium.db.changelog.dto.sql;
 
-
+import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 
 /**
  * Executes inline raw SQL.

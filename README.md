@@ -10,11 +10,12 @@ A Java library for automated database schema migrations and rollbacks. It provid
 ## Features
 
 - **Automated migrations**: apply, rollback, tag, sync, validate, and dry-run changesets
+- **Structured DDL changes**: createTable, dropTable, addColumn, dropColumn, createIndex, dropIndex with auto-rollback
 - **Own changelog format**: clean `.db.yaml`, `.db.xml`, and `.db.json` with property substitution
 - **External format import**: parse and migrate from external changelog formats (XML, YAML, JSON, SQL)
 - **Distributed locking**: via `toolarium-leader-election` (self-healing, no stale locks)
 - **SHA-256 checksums**: stable algorithm, no version prefix
-- **Rollback automation**: SQL parsing, pre-execution snapshots, validation enforcement
+- **Rollback automation**: auto-rollback for DDL, SQL parsing, pre-execution snapshots, validation enforcement
 - **All major databases**: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, H2, DB2, and more
 
 

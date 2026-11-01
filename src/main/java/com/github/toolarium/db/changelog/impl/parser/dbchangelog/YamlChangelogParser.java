@@ -12,7 +12,7 @@ import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
 import com.github.toolarium.db.changelog.dto.IChangelog;
 import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.SqlChangelogEntry;
+import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;

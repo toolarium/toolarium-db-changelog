@@ -1,0 +1,115 @@
+/*
+ * CreateTableChangelogEntry.java
+ *
+ * Copyright by toolarium, all rights reserved.
+ */
+package com.github.toolarium.db.changelog.dto.table;
+
+import com.github.toolarium.db.changelog.dto.IChangelogEntry;
+import com.github.toolarium.db.changelog.dto.column.IChangelogColumnDefinition;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Creates a new table with columns and constraints.
+ * Auto-rollback: generates a DropTableChangelogEntry.
+ *
+ * @author patrick
+ */
+public class CreateTableChangelogEntry implements IChangelogEntry {
+    private final String tableName;
+    private final List<IChangelogColumnDefinition> columns;
+
+
+    /**
+     * Constructor for CreateTableChangelogEntry
+     *
+     * @param tableName the table name
+     * @param columns the column definitions
+     */
+    public CreateTableChangelogEntry(String tableName, List<IChangelogColumnDefinition> columns) {
+        this.tableName = tableName;
+        this.columns = Collections.unmodifiableList(new ArrayList<>(columns));
+    }
+
+
+    /**
+     * Get the table name.
+     *
+     * @return the table name
+     */
+    public String getTableName() {
+        return tableName;
+    }
+
+
+    /**
+     * Get the column definitions.
+     *
+     * @return the columns
+     */
+    public List<IChangelogColumnDefinition> getColumns() {
+        return columns;
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.dto.IChangelogEntry#getDescription()
+     */
+    @Override
+    public String getDescription() {
+        return "createTable: " + tableName;
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.dto.IChangelogEntry#supportsAutoRollback()
+     */
+    @Override
+    public boolean supportsAutoRollback() {
+        return true;
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.dto.IChangelogEntry#createAutoRollback()
+     */
+    @Override
+    public IChangelogEntry createAutoRollback() {
+        return new DropTableChangelogEntry(tableName);
+    }
+
+
+    /**
+     * @see java.lang.Object#hashCode()
+     */
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(tableName);
+    }
+
+
+    /**
+     * @see java.lang.Object#equals(Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        return java.util.Objects.equals(tableName, ((CreateTableChangelogEntry) obj).tableName);
+    }
+
+
+    /**
+     * @see java.lang.Object#toString()
+     */
+    @Override
+    public String toString() {
+        return "CreateTableChangelogEntry[" + tableName + "]";
+    }
+}
