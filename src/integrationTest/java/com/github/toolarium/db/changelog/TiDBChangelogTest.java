@@ -8,9 +8,9 @@ package com.github.toolarium.db.changelog;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Tag;
-import org.testcontainers.tidb.TiDBContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.tidb.TiDBContainer;
 
 
 /**

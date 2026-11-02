@@ -21,10 +21,10 @@ import org.sqlite.SQLiteDataSource;
  */
 @Tag("integration")
 public class SQLiteChangelogTest extends AbstractChangelogIntegrationTest {
-    private SQLiteDataSource dataSource;
-
     @TempDir
-    File tempDir;
+    private File tempDir;
+
+    private SQLiteDataSource dataSource;
 
 
     /**

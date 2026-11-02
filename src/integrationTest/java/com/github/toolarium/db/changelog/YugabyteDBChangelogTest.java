@@ -24,7 +24,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class YugabyteDBChangelogTest extends AbstractChangelogIntegrationTest {
 
     @Container
-    private static final YugabyteDBYSQLContainer YUGABYTE = new YugabyteDBYSQLContainer("yugabytedb/yugabyte:2.18.7.0-b73");
+    private static final YugabyteDBYSQLContainer YUGABYTE = new YugabyteDBYSQLContainer("yugabytedb/yugabyte:2.20.1.0-b97");
 
 
     /**
