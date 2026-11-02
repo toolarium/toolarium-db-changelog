@@ -463,6 +463,22 @@ public class ChangelogEntryParserUtilTest {
 
 
     /**
+     * Test parsing customChange entry with invalid class throws exception.
+     */
+    @Test
+    void testParseCustomChangeInvalidClass() {
+        Map<String, Object> innerMap = new HashMap<>();
+        innerMap.put("class", "com.nonexistent.FakeClass");
+
+        Map<String, Object> entryMap = new HashMap<>();
+        entryMap.put("customChange", innerMap);
+
+        assertThrows(ChangelogParseException.class,
+                () -> ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH));
+    }
+
+
+    /**
      * Helper to build an entry map and parse it.
      *
      * @param key the entry type key

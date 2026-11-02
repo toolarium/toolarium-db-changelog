@@ -5,7 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.checksum.impl;
 
-import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
+import com.github.toolarium.db.changelog.IChangelogChecksumGenerator;
 import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +24,7 @@ public class ChangelogChecksumGeneratorImpl implements IChangelogChecksumGenerat
     private static final char[] HEX_CHARS = "0123456789abcdef".toCharArray();
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator#computeChecksum(IChangelogChangeSet)
+     * @see com.github.toolarium.db.changelog.IChangelogChecksumGenerator#computeChecksum(IChangelogChangeSet)
      */
     @Override
     public String computeChecksum(IChangelogChangeSet changeSet) {

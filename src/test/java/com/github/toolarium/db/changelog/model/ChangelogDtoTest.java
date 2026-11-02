@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
@@ -83,6 +84,7 @@ public class ChangelogDtoTest {
         assertTrue(cs1.isRunInTransaction());
         assertFalse(cs1.isRunAlways());
         assertFalse(cs1.isRunOnChange());
+        assertNull(cs1.getFilePath());
     }
 
 
@@ -108,6 +110,22 @@ public class ChangelogDtoTest {
         assertEquals(2, cs.getContexts().size());
         assertEquals("v1.0", cs.getLabels().get(0));
         assertFalse(cs.getRollbackEntries().isEmpty());
+    }
+
+
+    /**
+     * Test ChangelogChangeSet filePath override.
+     */
+    @Test
+    void testChangelogChangeSetFilePath() {
+        ChangelogChangeSetIdentity id = new ChangelogChangeSetIdentity("cs-fp", TEST_AUTHOR, TEST_FILEPATH);
+        List<IChangelogEntry> entries = Collections.singletonList(new SqlChangelogEntry("SELECT 1"));
+        ChangelogChangeSet cs = new ChangelogChangeSet(id, entries);
+
+        assertNull(cs.getFilePath());
+
+        cs.setFilePath("override/path.db.yaml");
+        assertEquals("override/path.db.yaml", cs.getFilePath());
     }
 
 

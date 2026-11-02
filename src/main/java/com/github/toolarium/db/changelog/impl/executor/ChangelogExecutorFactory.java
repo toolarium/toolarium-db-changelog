@@ -5,10 +5,12 @@
  */
 package com.github.toolarium.db.changelog.impl.executor;
 
-import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
+import com.github.toolarium.db.changelog.IChangelogChecksumGenerator;
+import com.github.toolarium.db.changelog.IChangelogExecutor;
+import com.github.toolarium.db.changelog.IChangelogTracker;
+import com.github.toolarium.db.changelog.config.ChangelogRollbackPolicy;
 import com.github.toolarium.db.changelog.impl.executor.impl.ChangelogExecutorImpl;
 import com.github.toolarium.db.changelog.impl.sql.ChangelogSqlGeneratorFactory;
-import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
 
 
 /**
@@ -49,14 +51,28 @@ public final class ChangelogExecutorFactory {
 
 
     /**
-     * Get a changelog executor.
+     * Get a changelog executor with default rollback policy (WARN).
      *
      * @param tracker the tracking table manager
      * @param checksumGenerator the checksum generator
      * @return the executor instance
      */
     public IChangelogExecutor getExecutor(IChangelogTracker tracker, IChangelogChecksumGenerator checksumGenerator) {
+        return getExecutor(tracker, checksumGenerator, ChangelogRollbackPolicy.WARN);
+    }
+
+
+    /**
+     * Get a changelog executor with the specified rollback policy.
+     *
+     * @param tracker the tracking table manager
+     * @param checksumGenerator the checksum generator
+     * @param rollbackPolicy the rollback policy for missing rollback definitions
+     * @return the executor instance
+     */
+    public IChangelogExecutor getExecutor(IChangelogTracker tracker, IChangelogChecksumGenerator checksumGenerator,
+                                          ChangelogRollbackPolicy rollbackPolicy) {
         return new ChangelogExecutorImpl(tracker, checksumGenerator,
-                ChangelogSqlGeneratorFactory.getInstance().getSqlGenerator());
+                ChangelogSqlGeneratorFactory.getInstance().getSqlGenerator(), rollbackPolicy);
     }
 }

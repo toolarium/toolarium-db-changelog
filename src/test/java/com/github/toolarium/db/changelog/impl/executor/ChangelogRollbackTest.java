@@ -294,4 +294,69 @@ public class ChangelogRollbackTest {
         return new ChangelogChangeSet(identity, entries, rollback, null,
                 false, false, true, true, Collections.emptyList(), Collections.emptyList(), null);
     }
+
+
+    /**
+     * Create a runner with FAIL rollback policy.
+     *
+     * @param changeSets the changesets
+     * @return the runner
+     */
+    private IChangelogRunner createRunnerWithFailPolicy(ChangelogChangeSet... changeSets) {
+        ChangelogRunnerImpl runner = (ChangelogRunnerImpl) ChangelogRunnerBuilder.builder()
+                .dataSource(dataSource)
+                .rollbackPolicy(com.github.toolarium.db.changelog.config.ChangelogRollbackPolicy.FAIL)
+                .build();
+        runner.setChangelog(new Changelog(FILEPATH, Arrays.asList(changeSets)));
+        return runner;
+    }
+
+
+    /**
+     * Test rollback with FAIL policy throws when no rollback is available.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testRollbackFailPolicyThrowsOnMissing() throws Exception {
+        // Use INSERT which has no auto-rollback and no manual rollback
+        IChangelogRunner setupRunner = createRunnerWithFailPolicy(
+                changeSetWithRollback("setup-fp", "CREATE TABLE fail_policy_test (id INT PRIMARY KEY)", "DROP TABLE fail_policy_test")
+        );
+        setupRunner.update();
+
+        // Now add a second changeset with no rollback possible
+        IChangelogRunner runner = createRunnerWithFailPolicy(
+                changeSetWithRollback("setup-fp", "CREATE TABLE fail_policy_test (id INT PRIMARY KEY)", "DROP TABLE fail_policy_test"),
+                changeSet("no-rb-fp", "INSERT INTO fail_policy_test (id) VALUES (1)")
+        );
+        runner.update();
+
+        // Rollback should fail because INSERT has no rollback and policy is FAIL
+        assertThrows(ChangelogException.class, () -> runner.rollback(1));
+    }
+
+
+    /**
+     * Test resilient rollback continues on partial failure and reports errors.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testResilientRollbackContinuesOnFailure() throws Exception {
+        // Two changesets: first has rollback that will fail, second has valid rollback
+        IChangelogRunner runner = createRunner(
+                changeSetWithRollback("resilient-1",
+                        "CREATE TABLE resilient_t1 (id INT PRIMARY KEY)",
+                        "DROP TABLE resilient_t1"),
+                changeSetWithRollback("resilient-2",
+                        "CREATE TABLE resilient_t2 (id INT PRIMARY KEY)",
+                        "DROP TABLE nonexistent_table_xyz")  // this rollback SQL will fail
+        );
+
+        runner.update();
+
+        // Rollback should complete (resilient) but throw with failure summary
+        assertThrows(ChangelogException.class, () -> runner.rollback(2));
+    }
 }

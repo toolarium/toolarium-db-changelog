@@ -151,8 +151,13 @@ public class XmlChangelogParser implements IChangelogParser {
     private IChangelogChangeSet parseChangeSet(XMLStreamReader reader, String physicalPath,
                                                IChangelogParameterResolver parameterResolver) throws Exception {
         Map<String, String> attrs = readChangeSetAttributes(reader, physicalPath);
+        String filePath = attrs.get("filePath");
+        String effectivePath = physicalPath;
+        if (filePath != null) {
+            effectivePath = filePath;
+        }
         ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(
-                attrs.get("id"), attrs.get("author"), physicalPath);
+                attrs.get("id"), attrs.get("author"), effectivePath);
 
         List<IChangelogEntry> entries = new ArrayList<>();
         List<IChangelogEntry> rollbackEntries = new ArrayList<>();
@@ -192,12 +197,16 @@ public class XmlChangelogParser implements IChangelogParser {
             }
         }
 
-        return new ChangelogChangeSet(identity, entries, rollbackEntries, attrs.get("comment"),
+        ChangelogChangeSet changeSet = new ChangelogChangeSet(identity, entries, rollbackEntries, attrs.get("comment"),
                 Boolean.parseBoolean(attrs.getOrDefault("runAlways", "false")),
                 Boolean.parseBoolean(attrs.getOrDefault("runOnChange", "false")),
                 !"false".equals(attrs.getOrDefault("failOnError", "true")),
                 !"false".equals(attrs.getOrDefault("runInTransaction", "true")),
                 parseCommaSeparated(attrs.get("context")), Collections.emptyList(), null);
+        if (filePath != null) {
+            changeSet.setFilePath(filePath);
+        }
+        return changeSet;
     }
 
 
@@ -292,7 +301,7 @@ public class XmlChangelogParser implements IChangelogParser {
      */
     private Map<String, String> readChangeSetAttributes(XMLStreamReader reader, String physicalPath) throws ChangelogParseException {
         Map<String, String> attrs = new LinkedHashMap<>();
-        String[] attrNames = {"id", "author", "comment", "context", "runAlways", "runOnChange", "failOnError", "runInTransaction"};
+        String[] attrNames = {"id", "author", "comment", "context", "filePath", "runAlways", "runOnChange", "failOnError", "runInTransaction"};
         for (String attrName : attrNames) {
             String value = reader.getAttributeValue(null, attrName);
             if (value != null) {

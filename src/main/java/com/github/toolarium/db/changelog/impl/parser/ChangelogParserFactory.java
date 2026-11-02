@@ -9,7 +9,10 @@ import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.dbchangelog.JsonChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.dbchangelog.XmlChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.dbchangelog.YamlChangelogParser;
+import com.github.toolarium.db.changelog.impl.parser.liquibase.LiquibaseJsonChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.liquibase.LiquibaseSqlChangelogParser;
+import com.github.toolarium.db.changelog.impl.parser.liquibase.LiquibaseXmlChangelogParser;
+import com.github.toolarium.db.changelog.impl.parser.liquibase.LiquibaseYamlChangelogParser;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -100,6 +103,9 @@ public final class ChangelogParserFactory {
         parsers.add(new JsonChangelogParser());
 
         // External format parsers
+        parsers.add(new LiquibaseXmlChangelogParser());
+        parsers.add(new LiquibaseYamlChangelogParser());
+        parsers.add(new LiquibaseJsonChangelogParser());
         parsers.add(new LiquibaseSqlChangelogParser());
     }
 

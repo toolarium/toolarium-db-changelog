@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: ext-create-table
+      author: testauthor
+      changes:
+        - sql:
+            sql: "CREATE TABLE ext_test (id INT PRIMARY KEY, name VARCHAR(100))"
+      rollback:
+        - sql:
+            sql: "DROP TABLE ext_test"
+
+  - changeSet:
+      id: ext-insert-data
+      author: testauthor
+      changes:
+        - sql:
+            sql: "INSERT INTO ext_test (id, name) VALUES (1, 'Test')"

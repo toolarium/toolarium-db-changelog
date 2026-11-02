@@ -89,6 +89,16 @@ public interface IChangelogChangeSet {
 
 
     /**
+     * Get the file path override. If set, this value is used as the filepath
+     * in the changeset identity instead of the physical resource location
+     * where the changeset was loaded from.
+     *
+     * @return the file path override, or null if using the resource location
+     */
+    String getFilePath();
+
+
+    /**
      * Get the preconditions for this changeset.
      *
      * @return the precondition container, or null if no preconditions

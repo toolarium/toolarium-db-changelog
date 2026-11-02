@@ -160,6 +160,30 @@ public class ChangelogParserTest {
 
 
     /**
+     * Test filePath attribute overrides the physical path in the changeset identity.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testFilePathOverride() throws Exception {
+        ChangelogParserFactory factory = ChangelogParserFactory.getInstance();
+        IChangelogParser parser = factory.getParser("filepath-test.db.yaml");
+
+        InputStream input = getClass().getClassLoader().getResourceAsStream("db/changelog/filepath-test.db.yaml");
+        assertNotNull(input, "filePath test changelog should be on classpath");
+
+        IChangelog changelog = parser.parse(input, "db/changelog/filepath-test.db.yaml", new ChangelogParameterResolverImpl());
+        assertNotNull(changelog);
+        assertEquals(1, changelog.getChangelogSets().size());
+
+        IChangelogChangeSet cs = changelog.getChangelogSets().get(0);
+        // The identity filepath should be the override value, not the physical path
+        assertEquals("original/location.db.yaml", cs.getIdentity().getFilepath());
+        assertEquals("original/location.db.yaml", cs.getFilePath());
+    }
+
+
+    /**
      * Test parser factory selects correct parser by extension.
      *
      * @throws Exception on error

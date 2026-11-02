@@ -5,6 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.sql.impl;
 
+import com.github.toolarium.db.changelog.config.ChangelogObjectQuotingStrategy;
 import com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator;
 import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
@@ -38,6 +39,7 @@ import java.util.List;
 public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator {
     /** ALTER TABLE prefix constant. */
     protected static final String ALTER_TABLE = "ALTER TABLE ";
+    private ChangelogObjectQuotingStrategy quotingStrategy = ChangelogObjectQuotingStrategy.NONE;
 
     /**
      * @see com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator#generateSql(IChangelogEntry)
@@ -385,5 +387,29 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      */
     protected String escapeStringLiteral(String value) {
         return value.replace("'", "''");
+    }
+
+
+    /**
+     * Quote a SQL identifier according to the configured quoting strategy.
+     *
+     * @param identifier the identifier (table name, column name, etc.)
+     * @return the optionally quoted identifier
+     */
+    protected String quoteIdentifier(String identifier) {
+        if (quotingStrategy == ChangelogObjectQuotingStrategy.QUOTE_ALL) {
+            return "\"" + identifier.replace("\"", "\"\"") + "\"";
+        }
+        return identifier;
+    }
+
+
+    /**
+     * Set the object quoting strategy.
+     *
+     * @param quotingStrategy the quoting strategy
+     */
+    public void setObjectQuotingStrategy(ChangelogObjectQuotingStrategy quotingStrategy) {
+        this.quotingStrategy = quotingStrategy;
     }
 }

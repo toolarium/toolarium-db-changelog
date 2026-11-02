@@ -237,6 +237,22 @@ public class ChangelogRunnerTest {
 
 
     /**
+     * Test validate passes when checksums match.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testValidateSuccess() throws Exception {
+        IChangelogRunner runner = createRunner(
+            changeSet(ID_1, "CREATE TABLE validate_test (id INT PRIMARY KEY)")
+        );
+
+        runner.update();
+        runner.validate();
+    }
+
+
+    /**
      * Test update without changelog throws exception.
      */
     @Test
@@ -247,6 +263,63 @@ public class ChangelogRunnerTest {
 
         assertThrows(com.github.toolarium.db.changelog.exception.ChangelogException.class,
                 () -> runner.update());
+    }
+
+
+    /**
+     * Test validate detects checksum mismatch.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testValidateDetectsMismatch() throws Exception {
+        IChangelogRunner runner = createRunner(
+            changeSet(ID_1, "CREATE TABLE mismatch_test (id INT PRIMARY KEY)")
+        );
+
+        runner.update();
+
+        // Replace changelog with different SQL but same id, causing checksum mismatch
+        ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(ID_1, "test-author", "test.db.yaml");
+        List<IChangelogEntry> changedEntries = Collections.singletonList(new SqlChangelogEntry("SELECT 999"));
+        ChangelogChangeSet changedCs = new ChangelogChangeSet(identity, changedEntries);
+        ((ChangelogRunnerImpl) runner).setChangelog(new Changelog("test.db.yaml", Collections.singletonList(changedCs)));
+
+        assertThrows(com.github.toolarium.db.changelog.exception.ChangelogException.class,
+                () -> runner.validate());
+    }
+
+
+    /**
+     * Test builder with rollback policy, snapshot policy, and object quoting strategy.
+     */
+    @Test
+    void testBuilderPolicies() {
+        ChangelogRunnerImpl runner = (ChangelogRunnerImpl) ChangelogRunnerBuilder.builder()
+                .dataSource(dataSource)
+                .rollbackPolicy(com.github.toolarium.db.changelog.config.ChangelogRollbackPolicy.FAIL)
+                .snapshotPolicy(com.github.toolarium.db.changelog.config.ChangelogSnapshotPolicy.DDL)
+                .objectQuotingStrategy(com.github.toolarium.db.changelog.config.ChangelogObjectQuotingStrategy.QUOTE_ALL)
+                .build();
+
+        assertNotNull(runner);
+    }
+
+
+    /**
+     * Test builder with custom resource resolver.
+     */
+    @Test
+    void testBuilderWithResourceResolver() {
+        com.github.toolarium.db.changelog.IChangelogResourceResolver customResolver =
+                com.github.toolarium.db.changelog.impl.resolver.ChangelogResourceResolverFactory.getInstance().getResourceResolver();
+
+        ChangelogRunnerImpl runner = (ChangelogRunnerImpl) ChangelogRunnerBuilder.builder()
+                .dataSource(dataSource)
+                .resourceResolver(customResolver)
+                .build();
+
+        assertNotNull(runner);
     }
 
 

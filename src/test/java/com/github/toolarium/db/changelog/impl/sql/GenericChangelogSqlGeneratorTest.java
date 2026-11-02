@@ -334,4 +334,23 @@ public class GenericChangelogSqlGeneratorTest {
         List<String> sql = generator.generateSql(entry);
         assertEquals("ALTER TABLE users ALTER COLUMN email DROP NOT NULL", sql.get(0));
     }
+
+
+    /**
+     * Test setObjectQuotingStrategy does not throw.
+     */
+    @Test
+    void testSetObjectQuotingStrategy() {
+        com.github.toolarium.db.changelog.impl.sql.impl.GenericChangelogSqlGeneratorImpl impl =
+                (com.github.toolarium.db.changelog.impl.sql.impl.GenericChangelogSqlGeneratorImpl) generator;
+        impl.setObjectQuotingStrategy(com.github.toolarium.db.changelog.config.ChangelogObjectQuotingStrategy.QUOTE_ALL);
+
+        // Verify SQL generation still works with QUOTE_ALL set
+        DropTableChangelogEntry entry = new DropTableChangelogEntry(TABLE_USERS);
+        List<String> sql = impl.generateSql(entry);
+        assertFalse(sql.isEmpty());
+
+        // Reset to NONE
+        impl.setObjectQuotingStrategy(com.github.toolarium.db.changelog.config.ChangelogObjectQuotingStrategy.NONE);
+    }
 }

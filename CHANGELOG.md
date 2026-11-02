@@ -43,8 +43,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Safe YAML parsing via SnakeYAML `SafeConstructor` (prevents arbitrary class instantiation).
 - XXE protection for XML changelog parsing.
 - SQL statement execution timeout (default 300 seconds).
-- Path traversal protection for changelog file resolution.
 - SQL default value escaping to prevent injection.
 - Safe regex handling for SQL statement splitting.
 - Resilient lock release with suppressed exception handling.
 - DataSource validation before database operations.
+- Validate operation: check for checksum mismatches without executing changes.
+- `filePath` attribute on changesets to override the resource location in the identity.
+- `ChangelogSnapshotPolicy` (AUTO, DDL, ALL, NONE) for future rollback snapshot support.
+- `ChangelogRollbackPolicy` (WARN, FAIL, IGNORE) for controlling behavior when no rollback is available.
+- `ChangelogObjectQuotingStrategy` (NONE, QUOTE_ALL) for SQL identifier quoting.
+- `IChangelogResourceResolver` for unified changelog file resolution across classpath, JARs, and file system.
+- Pluggable resource resolver via builder or constructor injection.
+- Resource resolution uses `toolarium-common` ClassPathUtil and FileUtil for path normalization and classpath scanning.
+- External YAML changelog format import (`.yaml` / `.yml` with `databaseChangeLog` root key).
+- External XML changelog format import (`.xml` with `changeSet` elements).
+- External JSON changelog format import (`.json` with `databaseChangeLog` root key).
+- `IChangelogSnapshotManager` for pre-execution metadata snapshots with `DB_CHANGELOG_SNAPSHOT` table.
+- DML change types: setTableRemarks, setColumnRemarks, loadData, loadUpdateData.
+- `ICustomChangelogEntry` interface for user-provided migration logic (execute, rollback, description).
+- `CustomChangelogEntry` wrapper to use custom changes inside changesets.
+- Integration test framework with abstract base test class and shared test scenarios.
+- Integration tests: H2 (embedded), PostgreSQL, MySQL, MariaDB, SQL Server, Oracle (via Testcontainers).
+- Run with `source cb --setenv && cb -Pintegration` to execute integration tests.
+- `customChange` parsing from YAML/XML/JSON changelogs using `toolarium-common` ClassInstanceUtil for class instantiation.
+- Executor support for `CustomChangelogEntry` execution and rollback.
+- Public API interfaces moved to root package (`IChangelogTracker`, `IChangelogExecutor`, `IChangelogLock`, `IChangelogChecksumGenerator`, `IChangelogResourceResolver`).
+- All builder methods support pluggable interface implementations (tracker, executor, lock, checksumGenerator, resourceResolver).
+- Database-portable DDL: TIMESTAMP/DATETIME detection per database, MySQL-compatible subqueries, Oracle-compatible alias syntax.
+- `ChangelogDatabaseTypeUtil` for database-specific type resolution.

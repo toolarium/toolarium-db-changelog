@@ -3,9 +3,8 @@
  *
  * Copyright by toolarium, all rights reserved.
  */
-package com.github.toolarium.db.changelog.impl.executor;
+package com.github.toolarium.db.changelog;
 
-import com.github.toolarium.db.changelog.IChangelogContext;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.model.IChangelog;
 import java.sql.Connection;

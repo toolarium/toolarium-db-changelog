@@ -5,6 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.lock;
 
+import com.github.toolarium.db.changelog.IChangelogLock;
 import com.github.toolarium.db.changelog.impl.lock.impl.ChangelogLeaderElectionLockImpl;
 import com.github.toolarium.db.changelog.impl.lock.impl.ChangelogNoOpLockImpl;
 import javax.sql.DataSource;

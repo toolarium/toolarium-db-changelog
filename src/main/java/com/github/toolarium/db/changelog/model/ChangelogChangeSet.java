@@ -28,6 +28,7 @@ public class ChangelogChangeSet implements IChangelogChangeSet {
     private final List<String> contexts;
     private final List<String> labels;
     private final ChangelogPreconditionContainer preconditions;
+    private String filePath;
 
     /**
      * Constructor for ChangelogChangeSet
@@ -179,6 +180,25 @@ public class ChangelogChangeSet implements IChangelogChangeSet {
     @Override
     public ChangelogPreconditionContainer getPreconditions() {
         return preconditions;
+    }
+
+
+    /**
+     * @see com.github.toolarium.db.changelog.model.IChangelogChangeSet#getFilePath()
+     */
+    @Override
+    public String getFilePath() {
+        return filePath;
+    }
+
+
+    /**
+     * Set the file path override.
+     *
+     * @param filePath the file path override
+     */
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
     }
 
 

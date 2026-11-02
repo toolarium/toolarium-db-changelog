@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.github.toolarium.db.changelog.IChangelogTracker;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
 import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;

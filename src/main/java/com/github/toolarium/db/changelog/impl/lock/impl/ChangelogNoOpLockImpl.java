@@ -5,7 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.lock.impl;
 
-import com.github.toolarium.db.changelog.impl.lock.IChangelogLock;
+import com.github.toolarium.db.changelog.IChangelogLock;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -20,7 +20,7 @@ public class ChangelogNoOpLockImpl implements IChangelogLock {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#acquireLock()
+     * @see com.github.toolarium.db.changelog.IChangelogLock#acquireLock()
      */
     @Override
     public void acquireLock() {
@@ -29,7 +29,7 @@ public class ChangelogNoOpLockImpl implements IChangelogLock {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#releaseLock()
+     * @see com.github.toolarium.db.changelog.IChangelogLock#releaseLock()
      */
     @Override
     public void releaseLock() {
@@ -38,7 +38,7 @@ public class ChangelogNoOpLockImpl implements IChangelogLock {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#isLocked()
+     * @see com.github.toolarium.db.changelog.IChangelogLock#isLocked()
      */
     @Override
     public boolean isLocked() {

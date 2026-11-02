@@ -5,6 +5,8 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.util;
 
+import com.github.toolarium.common.util.ClassInstanceUtil;
+import com.github.toolarium.db.changelog.ICustomChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
 import com.github.toolarium.db.changelog.model.IChangelogEntry;
@@ -16,6 +18,7 @@ import com.github.toolarium.db.changelog.model.column.ModifyColumnChangelogEntry
 import com.github.toolarium.db.changelog.model.column.RenameColumnChangelogEntry;
 import com.github.toolarium.db.changelog.model.constraint.AddNotNullConstraintChangelogEntry;
 import com.github.toolarium.db.changelog.model.constraint.DropNotNullConstraintChangelogEntry;
+import com.github.toolarium.db.changelog.model.dml.CustomChangelogEntry;
 import com.github.toolarium.db.changelog.model.index.CreateIndexChangelogEntry;
 import com.github.toolarium.db.changelog.model.index.DropIndexChangelogEntry;
 import com.github.toolarium.db.changelog.model.sequence.CreateSequenceChangelogEntry;
@@ -165,6 +168,12 @@ public final class ChangelogEntryParserUtil {
         if (entryMap.containsKey("tagDatabase")) {
             String tag = parameterResolver.resolve(entryMap.get("tagDatabase").toString());
             return new SqlChangelogEntry("-- tag: " + tag, false, ";", false, null);
+        }
+
+        if (entryMap.containsKey("customChange")) {
+            Map<String, Object> m = requireMap(entryMap, "customChange", physicalPath);
+            String className = parameterResolver.resolve((String) m.get("class"));
+            return createCustomChangelogEntry(className, physicalPath);
         }
 
         String entryType = entryMap.keySet().iterator().next();
@@ -368,5 +377,23 @@ public final class ChangelogEntryParserUtil {
             return (Map<String, Object>) value;
         }
         throw new ChangelogParseException("Expected map for [" + key + "] in [" + physicalPath + "].");
+    }
+
+
+    /**
+     * Create a CustomChangelogEntry by instantiating the given class via ClassInstanceUtil.
+     *
+     * @param className the fully qualified class name
+     * @param physicalPath the file path for error messages
+     * @return the custom changelog entry
+     * @throws ChangelogParseException if the class cannot be loaded or instantiated
+     */
+    private IChangelogEntry createCustomChangelogEntry(String className, String physicalPath) throws ChangelogParseException {
+        try {
+            ICustomChangelogEntry customEntry = ClassInstanceUtil.getInstance().newInstance(className);
+            return new CustomChangelogEntry(className, customEntry);
+        } catch (Exception e) {
+            throw new ChangelogParseException("Failed to instantiate customChange class [" + className + "] in [" + physicalPath + "].", e);
+        }
     }
 }

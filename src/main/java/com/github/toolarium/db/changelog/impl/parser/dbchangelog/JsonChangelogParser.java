@@ -146,10 +146,16 @@ public class JsonChangelogParser implements IChangelogParser {
         boolean failOnError = getBoolean(csNode, "failOnError", true);
         boolean runInTransaction = getBoolean(csNode, "runInTransaction", true);
 
+        String filePath = getText(csNode, "filePath", null);
+
         List<String> contexts = getTextList(csNode, "context");
         List<String> labels = getTextList(csNode, "labels");
 
-        ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(id, author, physicalPath);
+        String effectivePath = physicalPath;
+        if (filePath != null) {
+            effectivePath = filePath;
+        }
+        ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(id, author, effectivePath);
 
         List<IChangelogEntry> entries = parseEntries(csNode, "changes", parameterResolver, physicalPath);
         List<IChangelogEntry> rollbackEntries = parseEntries(csNode, "rollback", parameterResolver, physicalPath);
@@ -158,7 +164,12 @@ public class JsonChangelogParser implements IChangelogParser {
             throw new ChangelogParseException("Changeset [" + id + "] in [" + physicalPath + "] has no changes.");
         }
 
-        return new ChangelogChangeSet(identity, entries, rollbackEntries, comment, runAlways, runOnChange, failOnError, runInTransaction, contexts, labels, null);
+        ChangelogChangeSet changeSet = new ChangelogChangeSet(identity, entries, rollbackEntries, comment,
+                runAlways, runOnChange, failOnError, runInTransaction, contexts, labels, null);
+        if (filePath != null) {
+            changeSet.setFilePath(filePath);
+        }
+        return changeSet;
     }
 
 

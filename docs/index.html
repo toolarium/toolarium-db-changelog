@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>toolarium-db-changelog</title>
+<style>
+  :root {
+    --primary: #7c3aed;
+    --primary-light: #8b5cf6;
+    --primary-dark: #4c1d95;
+    --accent: #a78bfa;
+    --bg: #fafbfc;
+    --bg-card: #ffffff;
+    --bg-code: #f0f4f8;
+    --bg-table-header: #ede9fe;
+    --text: #24292f;
+    --text-muted: #57606a;
+    --border: #d0d7de;
+    --border-light: #e1e4e8;
+    --link: #0969da;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --radius: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+
+  .header {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+    color: white;
+    padding: 2.5rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><circle cx="40" cy="40" r="38" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/></svg>') repeat;
+    background-size: 80px;
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .header img { height: 110px; border-radius: 12px; background: rgba(255,255,255,0.15); padding: 8px; }
+  .header h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.5px; }
+  .header p { opacity: 0.92; font-size: 1.05rem; margin-top: 0.3rem; max-width: 750px; }
+  .badge { display: inline-block; margin-top: 0.5rem; }
+  .badge img { height: 20px; padding: 0; background: none; border-radius: 3px; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+
+  nav.toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+  nav.toc h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.6rem; }
+  nav.toc ul { list-style: none; columns: 2; column-gap: 2rem; }
+  nav.toc li { padding: 0.15rem 0; }
+  nav.toc a { color: var(--link); text-decoration: none; font-size: 0.9rem; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section { margin-bottom: 2rem; }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 0.4rem;
+    margin-bottom: 1rem;
+    margin-top: 2.5rem;
+  }
+  h3 { font-size: 1.1rem; font-weight: 600; color: var(--primary); margin: 1.3rem 0 0.5rem; }
+  h4 { font-size: 1rem; font-weight: 600; color: var(--text); margin: 1rem 0 0.4rem; }
+
+  p { margin-bottom: 0.7rem; }
+  a { color: var(--link); }
+
+  ul, ol { margin: 0.4rem 0 0.8rem 1.5rem; }
+  li { margin-bottom: 0.25rem; }
+
+  code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.88em;
+    background: var(--bg-code);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    border: 1px solid var(--border-light);
+  }
+
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 1rem 1.2rem;
+    border-radius: var(--radius);
+    overflow-x: auto;
+    margin: 0.5rem 0 1rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+  pre .comment { color: #64748b; }
+  pre .keyword { color: #7dd3fc; }
+  pre .string { color: #86efac; }
+  pre .type { color: #c4b5fd; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0 1.2rem;
+    font-size: 0.9rem;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: var(--bg-table-header);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.5rem 0.8rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f6f8fa; }
+  td:first-child code { font-weight: 500; color: var(--primary-dark); background: #ede9fe; border-color: #ddd6fe; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--shadow);
+  }
+  .card h3 { margin-top: 0; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    box-shadow: var(--shadow);
+    border-left: 3px solid var(--accent);
+  }
+  .feature-card h4 { margin-top: 0; color: var(--primary); font-size: 0.95rem; }
+  .feature-card p { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 0; }
+
+  .highlight-box {
+    background: linear-gradient(135deg, #ede9fe 0%, #f5f3ff 100%);
+    border: 1px solid #c4b5fd;
+    border-radius: var(--radius);
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+  }
+  .highlight-box strong { color: var(--primary-dark); }
+
+  footer {
+    text-align: center;
+    padding: 1.5rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-light);
+    margin-top: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .header-inner { flex-direction: column; text-align: center; }
+    nav.toc ul { columns: 1; }
+    .feature-grid { grid-template-columns: 1fr; }
+    .container { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <img src="logo/toolarium-db-changelog.svg" alt="toolarium-db-changelog logo">
+    <div>
+      <h1>toolarium-db-changelog</h1>
+      <p>A lightweight Java 11+ library for automated database schema migrations and rollbacks. Own changelog format, distributed locking, SHA-256 checksums, and comprehensive DDL/DML support.</p>
+      <span class="badge"><img src="https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg" alt="MPL-2.0"></span>
+      <span class="badge"><img src="https://img.shields.io/badge/Java-11%2B-blue.svg" alt="Java 11+"></span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<nav class="toc">
+  <h2>Contents</h2>
+  <ul>
+    <li><a href="#quick-start">Quick Start</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#api">API Reference</a></li>
+    <li><a href="#changelog-format">Changelog Format</a></li>
+    <li><a href="#change-types">Change Types</a></li>
+    <li><a href="#changeset-attributes">Changeset Attributes</a></li>
+    <li><a href="#preconditions">Preconditions</a></li>
+    <li><a href="#rollback">Rollback</a></li>
+    <li><a href="#configuration">Configuration</a></li>
+    <li><a href="#resource-resolution">Resource Resolution</a></li>
+    <li><a href="#external-format-import">External Format Import</a></li>
+    <li><a href="#comparison">Comparison with Other Tools</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#databases">Supported Databases</a></li>
+    <li><a href="#license">License</a></li>
+  </ul>
+</nav>
+
+<!-- QUICK START -->
+<section id="quick-start">
+<h2>Quick Start</h2>
+
+<h3>Adding the dependency</h3>
+<p><strong>Gradle:</strong></p>
+<pre><code><span class="keyword">implementation</span> <span class="string">'com.github.toolarium:toolarium-db-changelog:0.8.0'</span></code></pre>
+
+<p><strong>Maven:</strong></p>
+<pre><code>&lt;<span class="keyword">dependency</span>&gt;
+    &lt;<span class="keyword">groupId</span>&gt;com.github.toolarium&lt;/<span class="keyword">groupId</span>&gt;
+    &lt;<span class="keyword">artifactId</span>&gt;toolarium-db-changelog&lt;/<span class="keyword">artifactId</span>&gt;
+    &lt;<span class="keyword">version</span>&gt;0.8.0&lt;/<span class="keyword">version</span>&gt;
+&lt;/<span class="keyword">dependency</span>&gt;</code></pre>
+
+<h3>Minimal usage</h3>
+<pre><code><span class="type">IChangelogRunner</span> runner = <span class="type">ChangelogRunnerBuilder</span>.builder()
+    .dataSource(dataSource)
+    .changelog(<span class="string">"classpath:db/changelog/changelog-master.db.yaml"</span>)
+    .build();
+
+runner.update();</code></pre>
+
+<h3>With context/label filtering and distributed locking</h3>
+<pre><code><span class="type">IChangelogRunner</span> runner = <span class="type">ChangelogRunnerBuilder</span>.builder()
+    .dataSource(dataSource)
+    .changelog(<span class="string">"classpath:db/changelog/changelog-master.db.yaml"</span>)
+    .contexts(<span class="type">List</span>.of(<span class="string">"production"</span>, <span class="string">"shared"</span>))
+    .labels(<span class="type">List</span>.of(<span class="string">"v1.0"</span>))
+    .leaderElection(<span class="keyword">true</span>)
+    .build();
+
+runner.update();</code></pre>
+</section>
+
+<!-- FEATURES -->
+<section id="features">
+<h2>Features</h2>
+<div class="feature-grid">
+  <div class="feature-card">
+    <h4>Automated Migrations</h4>
+    <p>Apply, rollback, tag, sync, validate, and dry-run changesets with a simple API.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Structured DDL Changes</h4>
+    <p>createTable, dropTable, addColumn, dropColumn, renameTable, renameColumn, modifyColumn, createIndex, dropIndex with auto-rollback.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Constraints</h4>
+    <p>addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Sequences and Views</h4>
+    <p>createSequence, dropSequence, createView, dropView with auto-rollback support.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Preconditions</h4>
+    <p>dbms, tableExists, columnExists, indexExists, viewExists, sequenceExists, sqlCheck with and/or/not combinators and HALT/WARN/CONTINUE/MARK_RAN failure actions.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Own Changelog Format</h4>
+    <p>Clean <code>.db.yaml</code>, <code>.db.xml</code>, and <code>.db.json</code> with property substitution, includes, and format detection.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Distributed Locking</h4>
+    <p>Via <a href="https://github.com/toolarium/toolarium-leader-election">toolarium-leader-election</a> with DATABASE strategy, configurable timeout, and no-op fallback for single-instance deployments.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Security Hardened</h4>
+    <p>SQL identifier validation, XXE protection, safe YAML deserialization, statement timeouts, and path normalization.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Resilient Rollback</h4>
+    <p>Continues on partial failure, reports all errors. Configurable rollback policy (WARN, FAIL, IGNORE).</p>
+  </div>
+  <div class="feature-card">
+    <h4>Pluggable Resource Resolver</h4>
+    <p>Unified resolution across classpath, JARs, and file system via <code>IChangelogResourceResolver</code>. Replaceable via builder.</p>
+  </div>
+</div>
+</section>
+
+<!-- API -->
+<section id="api">
+<h2>API Reference</h2>
+<p>All operations are accessed through the <code>IChangelogRunner</code> interface:</p>
+<table>
+  <tr><th>Method</th><th>Description</th></tr>
+  <tr><td><code>update()</code></td><td>Apply all pending changesets</td></tr>
+  <tr><td><code>update(int count)</code></td><td>Apply up to <em>count</em> pending changesets</td></tr>
+  <tr><td><code>rollback(int count)</code></td><td>Rollback the last <em>count</em> applied changesets</td></tr>
+  <tr><td><code>rollback(String tag)</code></td><td>Rollback to a named tag</td></tr>
+  <tr><td><code>rollback(Instant dateTime)</code></td><td>Rollback to a point in time</td></tr>
+  <tr><td><code>generateRollbackSql(int count)</code></td><td>Generate rollback SQL without executing (dry-run)</td></tr>
+  <tr><td><code>tag(String tagName)</code></td><td>Tag the current database state</td></tr>
+  <tr><td><code>sync()</code></td><td>Mark all pending changesets as executed without running (baselining)</td></tr>
+  <tr><td><code>validate()</code></td><td>Check for checksum mismatches without executing</td></tr>
+  <tr><td><code>status()</code></td><td>List pending and applied changesets</td></tr>
+  <tr><td><code>history()</code></td><td>List all applied changesets</td></tr>
+  <tr><td><code>clearChecksums()</code></td><td>Reset all stored checksums (forces recalculation)</td></tr>
+</table>
+</section>
+
+<!-- CHANGELOG FORMAT -->
+<section id="changelog-format">
+<h2>Changelog Format</h2>
+<p>The library supports three native formats and one external import format:</p>
+<table>
+  <tr><th>Format</th><th>Extension</th><th>Description</th></tr>
+  <tr><td>DB-Changelog YAML</td><td><code>.db.yaml</code> / <code>.db.yml</code></td><td>Recommended native format</td></tr>
+  <tr><td>DB-Changelog XML</td><td><code>.db.xml</code></td><td>Native XML format</td></tr>
+  <tr><td>DB-Changelog JSON</td><td><code>.db.json</code></td><td>Native JSON format</td></tr>
+  <tr><td>External SQL</td><td><code>.sql</code></td><td>Formatted SQL with <code>--changeset</code> directives</td></tr>
+</table>
+
+<h3>YAML Example</h3>
+<pre><code><span class="keyword">format</span>: <span class="string">toolarium-db-changelog/1.0</span>
+<span class="keyword">properties</span>:
+  <span class="keyword">prefix</span>: <span class="string">app_</span>
+
+<span class="keyword">changesets</span>:
+  - <span class="keyword">id</span>: <span class="string">create-users</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">createTable</span>:
+          <span class="keyword">tableName</span>: <span class="string">${prefix}users</span>
+          <span class="keyword">columns</span>:
+            - <span class="keyword">name</span>: <span class="string">id</span>
+              <span class="keyword">type</span>: <span class="string">BIGINT</span>
+              <span class="keyword">autoIncrement</span>: <span class="keyword">true</span>
+              <span class="keyword">constraints</span>: { <span class="keyword">primaryKey</span>: <span class="keyword">true</span>, <span class="keyword">nullable</span>: <span class="keyword">false</span> }
+            - <span class="keyword">name</span>: <span class="string">name</span>
+              <span class="keyword">type</span>: <span class="string">VARCHAR(100)</span>
+              <span class="keyword">constraints</span>: { <span class="keyword">nullable</span>: <span class="keyword">false</span> }
+            - <span class="keyword">name</span>: <span class="string">email</span>
+              <span class="keyword">type</span>: <span class="string">VARCHAR(255)</span>
+              <span class="keyword">constraints</span>: { <span class="keyword">unique</span>: <span class="keyword">true</span> }
+
+  - <span class="keyword">id</span>: <span class="string">add-phone</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">addColumn</span>:
+          <span class="keyword">tableName</span>: <span class="string">${prefix}users</span>
+          <span class="keyword">columns</span>:
+            - <span class="keyword">name</span>: <span class="string">phone</span>
+              <span class="keyword">type</span>: <span class="string">VARCHAR(20)</span>
+
+  - <span class="keyword">id</span>: <span class="string">raw-sql-example</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"INSERT INTO ${prefix}users (name, email) VALUES ('Admin', 'admin@example.com')"</span>
+    <span class="keyword">rollback</span>:
+      - <span class="keyword">sql</span>: <span class="string">"DELETE FROM ${prefix}users WHERE email = 'admin@example.com'"</span></code></pre>
+
+<h3>XML Example</h3>
+<pre><code>&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span>?&gt;
+&lt;<span class="keyword">dbChangelog</span> format=<span class="string">"toolarium-db-changelog/1.0"</span>&gt;
+    &lt;<span class="keyword">properties</span>&gt;
+        &lt;<span class="keyword">property</span> name=<span class="string">"prefix"</span> value=<span class="string">"app_"</span>/&gt;
+    &lt;/<span class="keyword">properties</span>&gt;
+    &lt;<span class="keyword">changesets</span>&gt;
+        &lt;<span class="keyword">changeset</span> id=<span class="string">"create-users"</span>&gt;
+            &lt;<span class="keyword">changes</span>&gt;
+                &lt;<span class="keyword">sql</span>&gt;CREATE TABLE ${prefix}users (id INT PRIMARY KEY, name VARCHAR(100))&lt;/<span class="keyword">sql</span>&gt;
+            &lt;/<span class="keyword">changes</span>&gt;
+            &lt;<span class="keyword">rollback</span>&gt;
+                &lt;<span class="keyword">sql</span>&gt;DROP TABLE ${prefix}users&lt;/<span class="keyword">sql</span>&gt;
+            &lt;/<span class="keyword">rollback</span>&gt;
+        &lt;/<span class="keyword">changeset</span>&gt;
+    &lt;/<span class="keyword">changesets</span>&gt;
+&lt;/<span class="keyword">dbChangelog</span>&gt;</code></pre>
+</section>
+
+<!-- CHANGE TYPES -->
+<section id="change-types">
+<h2>Change Types</h2>
+<p>All examples are in YAML format. The same structures apply to XML and JSON.</p>
+
+<p>The following examples build a contact management schema step by step. Each change type shows a realistic use within that scenario.</p>
+
+<h3>Table operations</h3>
+
+<h4>createTable <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: dropTable)</span></h4>
+<pre><code>- <span class="keyword">createTable</span>:
+    <span class="keyword">tableName</span>: <span class="string">person</span>
+    <span class="keyword">columns</span>:
+      - <span class="keyword">name</span>: <span class="string">id</span>
+        <span class="keyword">type</span>: <span class="string">BIGINT</span>
+        <span class="keyword">autoIncrement</span>: <span class="keyword">true</span>
+        <span class="keyword">constraints</span>: { <span class="keyword">primaryKey</span>: <span class="keyword">true</span>, <span class="keyword">nullable</span>: <span class="keyword">false</span> }
+      - <span class="keyword">name</span>: <span class="string">first_name</span>
+        <span class="keyword">type</span>: <span class="string">VARCHAR(100)</span>
+        <span class="keyword">constraints</span>: { <span class="keyword">nullable</span>: <span class="keyword">false</span> }
+      - <span class="keyword">name</span>: <span class="string">last_name</span>
+        <span class="keyword">type</span>: <span class="string">VARCHAR(100)</span>
+        <span class="keyword">constraints</span>: { <span class="keyword">nullable</span>: <span class="keyword">false</span> }
+      - <span class="keyword">name</span>: <span class="string">email</span>
+        <span class="keyword">type</span>: <span class="string">VARCHAR(255)</span>
+        <span class="keyword">constraints</span>: { <span class="keyword">unique</span>: <span class="keyword">true</span> }
+      - <span class="keyword">name</span>: <span class="string">status</span>
+        <span class="keyword">type</span>: <span class="string">VARCHAR(20)</span>
+        <span class="keyword">defaultValue</span>: <span class="string">active</span>
+      - <span class="keyword">name</span>: <span class="string">created_at</span>
+        <span class="keyword">type</span>: <span class="string">TIMESTAMP</span>
+        <span class="keyword">defaultValueComputed</span>: <span class="string">CURRENT_TIMESTAMP</span></code></pre>
+
+<h4>dropTable</h4>
+<pre><code><span class="comment"># Remove the legacy contact table after data has been migrated to person</span>
+- <span class="keyword">dropTable</span>:
+    <span class="keyword">tableName</span>: <span class="string">legacy_contact</span></code></pre>
+
+<h4>renameTable <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: reverse rename)</span></h4>
+<pre><code><span class="comment"># Rename person to contact as the domain model evolves</span>
+- <span class="keyword">renameTable</span>:
+    <span class="keyword">oldTableName</span>: <span class="string">person</span>
+    <span class="keyword">newTableName</span>: <span class="string">contact</span></code></pre>
+
+<h3>Column operations</h3>
+
+<h4>addColumn <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: dropColumn)</span></h4>
+<pre><code><span class="comment"># Add phone and company columns to the contact table</span>
+- <span class="keyword">addColumn</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">columns</span>:
+      - <span class="keyword">name</span>: <span class="string">phone</span>
+        <span class="keyword">type</span>: <span class="string">VARCHAR(20)</span>
+      - <span class="keyword">name</span>: <span class="string">company</span>
+        <span class="keyword">type</span>: <span class="string">VARCHAR(200)</span>
+        <span class="keyword">constraints</span>: { <span class="keyword">nullable</span>: <span class="keyword">false</span> }
+        <span class="keyword">defaultValue</span>: <span class="string">unknown</span></code></pre>
+
+<h4>dropColumn</h4>
+<pre><code><span class="comment"># Remove deprecated columns no longer used by the application</span>
+- <span class="keyword">dropColumn</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">columns</span>: [<span class="string">fax</span>, <span class="string">pager</span>]</code></pre>
+
+<h4>renameColumn <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: reverse rename)</span></h4>
+<pre><code><span class="comment"># Rename email to email_address for clarity</span>
+- <span class="keyword">renameColumn</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">oldColumnName</span>: <span class="string">email</span>
+    <span class="keyword">newColumnName</span>: <span class="string">email_address</span></code></pre>
+
+<h4>modifyColumn</h4>
+<pre><code><span class="comment"># Increase the company column length after data review</span>
+- <span class="keyword">modifyColumn</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">columnName</span>: <span class="string">company</span>
+    <span class="keyword">newType</span>: <span class="string">VARCHAR(500)</span></code></pre>
+
+<h3>Index operations</h3>
+
+<h4>createIndex <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: dropIndex)</span></h4>
+<pre><code><span class="comment"># Index for email lookups</span>
+- <span class="keyword">createIndex</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">indexName</span>: <span class="string">idx_contact_email</span>
+    <span class="keyword">columns</span>: [<span class="string">email_address</span>]
+
+<span class="comment"># Unique composite index on name for deduplication</span>
+- <span class="keyword">createIndex</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">indexName</span>: <span class="string">idx_contact_name</span>
+    <span class="keyword">columns</span>: [<span class="string">last_name</span>, <span class="string">first_name</span>]
+    <span class="keyword">unique</span>: <span class="keyword">true</span></code></pre>
+
+<h4>dropIndex</h4>
+<pre><code><span class="comment"># Remove the name index, replaced by a full-text search</span>
+- <span class="keyword">dropIndex</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">indexName</span>: <span class="string">idx_contact_name</span></code></pre>
+
+<h3>Constraint operations</h3>
+
+<h4>addNotNullConstraint <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: dropNotNull)</span></h4>
+<pre><code><span class="comment"># Make email_address required after backfilling existing rows</span>
+- <span class="keyword">addNotNullConstraint</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">columnName</span>: <span class="string">email_address</span></code></pre>
+
+<h4>dropNotNullConstraint <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: addNotNull)</span></h4>
+<pre><code><span class="comment"># Allow phone to be optional for contacts imported from external systems</span>
+- <span class="keyword">dropNotNullConstraint</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">columnName</span>: <span class="string">phone</span></code></pre>
+
+<h3>Sequence operations</h3>
+
+<h4>createSequence <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: dropSequence)</span></h4>
+<pre><code><span class="comment"># Sequence for generating contact reference numbers</span>
+- <span class="keyword">createSequence</span>:
+    <span class="keyword">sequenceName</span>: <span class="string">contact_ref_seq</span></code></pre>
+
+<h4>dropSequence</h4>
+<pre><code><span class="comment"># Remove the sequence after switching to UUID-based references</span>
+- <span class="keyword">dropSequence</span>:
+    <span class="keyword">sequenceName</span>: <span class="string">contact_ref_seq</span></code></pre>
+
+<h3>View operations</h3>
+
+<h4>createView <span style="color:var(--accent);font-weight:normal;font-size:0.85em">(auto-rollback: dropView)</span></h4>
+<pre><code><span class="comment"># View for the dashboard showing only active contacts</span>
+- <span class="keyword">createView</span>:
+    <span class="keyword">viewName</span>: <span class="string">active_contacts</span>
+    <span class="keyword">selectQuery</span>: <span class="string">SELECT id, first_name, last_name, email_address FROM contact WHERE status = 'active'</span></code></pre>
+
+<h4>dropView</h4>
+<pre><code><span class="comment"># Remove the view, replaced by an API-level filter</span>
+- <span class="keyword">dropView</span>:
+    <span class="keyword">viewName</span>: <span class="string">active_contacts</span></code></pre>
+
+<h3>Raw SQL</h3>
+
+<h4>sql</h4>
+<pre><code><span class="comment"># Seed initial data</span>
+- <span class="keyword">sql</span>: <span class="string">"INSERT INTO contact (first_name, last_name, email_address) VALUES ('Jane', 'Doe', 'jane@example.com')"</span>
+
+<span class="comment"># With manual rollback</span>
+<span class="keyword">changes</span>:
+  - <span class="keyword">sql</span>: <span class="string">"INSERT INTO contact (first_name, last_name, email_address) VALUES ('System', 'Admin', 'admin@example.com')"</span>
+<span class="keyword">rollback</span>:
+  - <span class="keyword">sql</span>: <span class="string">"DELETE FROM contact WHERE email_address = 'admin@example.com'"</span></code></pre>
+
+<h3>DML operations</h3>
+
+<h4>insert</h4>
+<pre><code>- <span class="keyword">insert</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span></code></pre>
+
+<h4>update</h4>
+<pre><code><span class="comment"># Deactivate contacts that have not logged in for a year</span>
+- <span class="keyword">update</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">whereClause</span>: <span class="string">last_login &lt; DATEADD('YEAR', -1, CURRENT_DATE)</span></code></pre>
+
+<h4>delete</h4>
+<pre><code><span class="comment"># Purge contacts marked for deletion</span>
+- <span class="keyword">delete</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">whereClause</span>: <span class="string">status = 'deleted'</span></code></pre>
+
+<h4>tagDatabase</h4>
+<pre><code><span class="comment"># Tag the state after the initial contact schema is complete</span>
+- <span class="keyword">tagDatabase</span>: <span class="string">v1.0-contact-schema</span></code></pre>
+
+<h4>setTableRemarks</h4>
+<pre><code><span class="comment"># Document the purpose of the contact table</span>
+- <span class="keyword">setTableRemarks</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">remarks</span>: <span class="string">Stores all customer and partner contact information</span></code></pre>
+
+<h4>setColumnRemarks</h4>
+<pre><code><span class="comment"># Document the email_address column</span>
+- <span class="keyword">setColumnRemarks</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">columnName</span>: <span class="string">email_address</span>
+    <span class="keyword">remarks</span>: <span class="string">Primary email used for notifications and login</span></code></pre>
+
+<h4>loadData</h4>
+<pre><code><span class="comment"># Bulk load initial contact data from CSV</span>
+- <span class="keyword">loadData</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">filePath</span>: <span class="string">data/initial-contacts.csv</span>
+    <span class="keyword">separator</span>: <span class="string">,</span>
+    <span class="keyword">encoding</span>: <span class="string">UTF-8</span></code></pre>
+
+<h4>loadUpdateData</h4>
+<pre><code><span class="comment"># Upsert contact data: insert new rows, update existing by primary key</span>
+- <span class="keyword">loadUpdateData</span>:
+    <span class="keyword">tableName</span>: <span class="string">contact</span>
+    <span class="keyword">filePath</span>: <span class="string">data/contact-updates.csv</span>
+    <span class="keyword">primaryKeyColumn</span>: <span class="string">id</span></code></pre>
+
+<h3>Custom changes</h3>
+
+<h4>customChange</h4>
+<pre><code><span class="comment"># Execute user-provided Java migration logic</span>
+- <span class="keyword">customChange</span>:
+    <span class="keyword">class</span>: <span class="string">com.example.migration.MigrateContactData</span></code></pre>
+<p>The referenced class must implement <code>ICustomChangelogEntry</code> with <code>execute(Connection)</code>, <code>rollback(Connection)</code>, <code>getDescription()</code>, and <code>supportsRollback()</code>.</p>
+</section>
+
+<!-- CHANGESET ATTRIBUTES -->
+<section id="changeset-attributes">
+<h2>Changeset Attributes</h2>
+<table>
+  <tr><th>Attribute</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>id</code></td><td>(required)</td><td>Unique identifier for the changeset</td></tr>
+  <tr><td><code>author</code></td><td>OS username</td><td>Author of the changeset</td></tr>
+  <tr><td><code>filePath</code></td><td>Resource location</td><td>Overrides the resource location in the changeset identity</td></tr>
+  <tr><td><code>comment</code></td><td>null</td><td>Descriptive comment</td></tr>
+  <tr><td><code>runAlways</code></td><td>false</td><td>Re-execute on every run</td></tr>
+  <tr><td><code>runOnChange</code></td><td>false</td><td>Re-execute when checksum changes</td></tr>
+  <tr><td><code>failOnError</code></td><td>true</td><td>Halt on execution error</td></tr>
+  <tr><td><code>runInTransaction</code></td><td>true</td><td>Wrap in a database transaction</td></tr>
+  <tr><td><code>context</code></td><td>(none)</td><td>Context filter for conditional execution</td></tr>
+  <tr><td><code>labels</code></td><td>(none)</td><td>Label filter for conditional execution</td></tr>
+</table>
+
+<h3>filePath override</h3>
+<p>A changeset is identified by the triple <code>(id, author, filePath)</code>. By default, <code>filePath</code> is the resource location where the changeset was loaded from. If you reorganize your changelog files after changesets have been applied, use the <code>filePath</code> attribute to keep the identity stable:</p>
+<pre><code><span class="keyword">changesets</span>:
+  - <span class="keyword">id</span>: <span class="string">create-users</span>
+    <span class="keyword">filePath</span>: <span class="string">db/changelogs/001-initial.db.yaml</span>  <span class="comment"># keeps original identity</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">createTable</span>: ...</code></pre>
+
+<h3>Context and label filtering</h3>
+<p>Changesets can be conditionally executed based on active contexts and labels configured on the runner. A changeset runs only if at least one of its contexts/labels matches the runner's active set. Changesets without contexts/labels always run.</p>
+<pre><code><span class="keyword">changesets</span>:
+  - <span class="keyword">id</span>: <span class="string">dev-seed-data</span>
+    <span class="keyword">context</span>: [<span class="string">"dev"</span>, <span class="string">"test"</span>]
+    <span class="keyword">labels</span>: [<span class="string">"v1.0"</span>]
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"INSERT INTO users (name) VALUES ('Dev User')"</span></code></pre>
+
+<h3>runAlways and runOnChange</h3>
+<p><code>runAlways: true</code> re-executes the changeset on every update, regardless of whether it was already applied. Useful for stored procedures or views that should always be refreshed.</p>
+<p><code>runOnChange: true</code> re-executes only when the changeset content (checksum) has changed since the last execution.</p>
+<pre><code><span class="keyword">changesets</span>:
+  <span class="comment"># Refreshed on every run</span>
+  - <span class="keyword">id</span>: <span class="string">refresh-view</span>
+    <span class="keyword">runAlways</span>: <span class="keyword">true</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">createView</span>:
+          <span class="keyword">viewName</span>: <span class="string">active_users</span>
+          <span class="keyword">selectQuery</span>: <span class="string">SELECT id, name FROM users WHERE status = 'active'</span>
+
+  <span class="comment"># Re-runs only when the SQL changes</span>
+  - <span class="keyword">id</span>: <span class="string">create-report-proc</span>
+    <span class="keyword">runOnChange</span>: <span class="keyword">true</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"CREATE OR REPLACE PROCEDURE generate_report() ..."</span></code></pre>
+
+<h3>failOnError and runInTransaction</h3>
+<p><code>failOnError: false</code> allows execution to continue even if the changeset fails. The error is logged but does not halt the migration.</p>
+<p><code>runInTransaction: false</code> disables the transaction wrapper. Needed for DDL that cannot run inside a transaction on some databases (e.g., <code>CREATE INDEX CONCURRENTLY</code> on PostgreSQL).</p>
+<pre><code><span class="keyword">changesets</span>:
+  - <span class="keyword">id</span>: <span class="string">optional-cleanup</span>
+    <span class="keyword">failOnError</span>: <span class="keyword">false</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"DROP TABLE IF EXISTS temp_data"</span>
+
+  - <span class="keyword">id</span>: <span class="string">concurrent-index</span>
+    <span class="keyword">runInTransaction</span>: <span class="keyword">false</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"CREATE INDEX CONCURRENTLY idx_users_email ON users (email)"</span></code></pre>
+
+<h3>Full example with all attributes</h3>
+<pre><code><span class="keyword">changesets</span>:
+  - <span class="keyword">id</span>: <span class="string">full-example</span>
+    <span class="keyword">author</span>: <span class="string">john</span>
+    <span class="keyword">comment</span>: <span class="string">"Add audit columns to users table"</span>
+    <span class="keyword">filePath</span>: <span class="string">db/changelogs/v1/001-audit.db.yaml</span>
+    <span class="keyword">context</span>: [<span class="string">"production"</span>, <span class="string">"staging"</span>]
+    <span class="keyword">labels</span>: [<span class="string">"v2.0"</span>, <span class="string">"audit"</span>]
+    <span class="keyword">runOnChange</span>: <span class="keyword">false</span>
+    <span class="keyword">runAlways</span>: <span class="keyword">false</span>
+    <span class="keyword">failOnError</span>: <span class="keyword">true</span>
+    <span class="keyword">runInTransaction</span>: <span class="keyword">true</span>
+    <span class="keyword">preconditions</span>:
+      <span class="keyword">onFail</span>: <span class="string">WARN</span>
+      <span class="keyword">checks</span>:
+        - <span class="keyword">tableExists</span>: <span class="string">users</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">addColumn</span>:
+          <span class="keyword">tableName</span>: <span class="string">users</span>
+          <span class="keyword">columns</span>:
+            - <span class="keyword">name</span>: <span class="string">created_by</span>
+              <span class="keyword">type</span>: <span class="string">VARCHAR(100)</span>
+            - <span class="keyword">name</span>: <span class="string">updated_at</span>
+              <span class="keyword">type</span>: <span class="string">TIMESTAMP</span>
+    <span class="keyword">rollback</span>:
+      - <span class="keyword">dropColumn</span>:
+          <span class="keyword">tableName</span>: <span class="string">users</span>
+          <span class="keyword">columns</span>: [<span class="string">created_by</span>, <span class="string">updated_at</span>]</code></pre>
+</section>
+
+<!-- PRECONDITIONS -->
+<section id="preconditions">
+<h2>Preconditions</h2>
+<p>Preconditions allow changesets to check database state before execution:</p>
+<table>
+  <tr><th>Precondition</th><th>Description</th></tr>
+  <tr><td><code>dbms</code></td><td>Check the database type (h2, postgresql, mysql, ...)</td></tr>
+  <tr><td><code>tableExists</code></td><td>Check if a table exists</td></tr>
+  <tr><td><code>columnExists</code></td><td>Check if a column exists in a table</td></tr>
+  <tr><td><code>indexExists</code></td><td>Check if an index exists</td></tr>
+  <tr><td><code>viewExists</code></td><td>Check if a view exists</td></tr>
+  <tr><td><code>sequenceExists</code></td><td>Check if a sequence exists</td></tr>
+  <tr><td><code>foreignKeyExists</code></td><td>Check if a foreign key exists</td></tr>
+  <tr><td><code>primaryKeyExists</code></td><td>Check if a primary key exists</td></tr>
+  <tr><td><code>sqlCheck</code></td><td>Execute SQL and check the result</td></tr>
+  <tr><td><code>changeSetExecuted</code></td><td>Check if a specific changeset was already applied</td></tr>
+  <tr><td><code>runningAs</code></td><td>Check the database user</td></tr>
+</table>
+
+<h3>Failure actions</h3>
+<table>
+  <tr><th>Action</th><th>Description</th></tr>
+  <tr><td><code>HALT</code></td><td>Stop execution with an error (default)</td></tr>
+  <tr><td><code>WARN</code></td><td>Log a warning and skip the changeset</td></tr>
+  <tr><td><code>CONTINUE</code></td><td>Silently skip the changeset</td></tr>
+  <tr><td><code>MARK_RAN</code></td><td>Skip but record the changeset as executed</td></tr>
+</table>
+
+<h3>Logical combinators</h3>
+<p>Preconditions can be combined with <code>and</code>, <code>or</code>, and <code>not</code> operators.</p>
+
+<h3>YAML example</h3>
+<pre><code><span class="keyword">changesets</span>:
+  - <span class="keyword">id</span>: <span class="string">h2-only-change</span>
+    <span class="keyword">preconditions</span>:
+      <span class="keyword">onFail</span>: <span class="string">WARN</span>
+      <span class="keyword">checks</span>:
+        - <span class="keyword">dbms</span>: <span class="string">h2</span>
+        - <span class="keyword">tableExists</span>: <span class="string">users</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"ALTER TABLE users ADD COLUMN extra VARCHAR(50)"</span></code></pre>
+</section>
+
+<!-- ROLLBACK -->
+<section id="rollback">
+<h2>Rollback</h2>
+<p>Rollback SQL is determined in priority order:</p>
+<ol>
+  <li><strong>Manual rollback entries</strong> defined in the changeset</li>
+  <li><strong>Auto-rollback</strong> generated from structured DDL changes (e.g., createTable generates DROP TABLE)</li>
+  <li><strong>Level 1 SQL rollback</strong> generated by parsing raw SQL patterns (CREATE TABLE, ALTER TABLE ADD COLUMN, CREATE INDEX, etc.)</li>
+</ol>
+
+<h3>Rollback policy</h3>
+<p>The <code>ChangelogRollbackPolicy</code> controls behavior when no rollback is available:</p>
+<table>
+  <tr><th>Policy</th><th>Description</th></tr>
+  <tr><td><code>WARN</code></td><td>Log a warning and skip (default)</td></tr>
+  <tr><td><code>FAIL</code></td><td>Fail the entire rollback operation</td></tr>
+  <tr><td><code>IGNORE</code></td><td>Silently skip without warning</td></tr>
+</table>
+
+<pre><code><span class="type">IChangelogRunner</span> runner = <span class="type">ChangelogRunnerBuilder</span>.builder()
+    .dataSource(dataSource)
+    .changelog(<span class="string">"classpath:db/changelog.db.yaml"</span>)
+    .rollbackPolicy(<span class="type">ChangelogRollbackPolicy</span>.FAIL)
+    .build();</code></pre>
+</section>
+
+<!-- CONFIGURATION -->
+<section id="configuration">
+<h2>Configuration</h2>
+<p>All configuration is done through the <code>ChangelogRunnerBuilder</code>:</p>
+<table>
+  <tr><th>Builder method</th><th>Default</th><th>Description</th></tr>
+  <tr><td><code>dataSource(DataSource)</code></td><td>(required)</td><td>The JDBC data source</td></tr>
+  <tr><td><code>changelog(String)</code></td><td>null</td><td>Path to the root changelog file</td></tr>
+  <tr><td><code>trackingTable(String)</code></td><td>DB_CHANGELOG</td><td>Name of the tracking table</td></tr>
+  <tr><td><code>lockTable(String)</code></td><td>DB_CHANGELOG_LOCK</td><td>Name of the lock table</td></tr>
+  <tr><td><code>leaderElection(boolean)</code></td><td>false</td><td>Enable distributed locking</td></tr>
+  <tr><td><code>contexts(List&lt;String&gt;)</code></td><td>(none)</td><td>Active contexts for filtering</td></tr>
+  <tr><td><code>labels(List&lt;String&gt;)</code></td><td>(none)</td><td>Active labels for filtering</td></tr>
+  <tr><td><code>snapshotPolicy(ChangelogSnapshotPolicy)</code></td><td>NONE</td><td>When to capture pre-execution snapshots</td></tr>
+  <tr><td><code>rollbackPolicy(ChangelogRollbackPolicy)</code></td><td>WARN</td><td>Behavior when no rollback is available</td></tr>
+  <tr><td><code>objectQuotingStrategy(ChangelogObjectQuotingStrategy)</code></td><td>NONE</td><td>SQL identifier quoting (NONE or QUOTE_ALL)</td></tr>
+  <tr><td><code>resourceResolver(IChangelogResourceResolver)</code></td><td>Default resolver</td><td>Custom resource resolver for loading changelogs</td></tr>
+</table>
+</section>
+
+<!-- RESOURCE RESOLUTION -->
+<section id="resource-resolution">
+<h2>Resource Resolution</h2>
+<p>Changelog files are resolved via <code>IChangelogResourceResolver</code> in this order:</p>
+<ol>
+  <li><strong>ClassPathUtil</strong> from <a href="https://github.com/toolarium/toolarium-common">toolarium-common</a> (scans classpath entries, JARs, nested archives)</li>
+  <li><strong>Thread context classloader</strong> and class classloader</li>
+  <li><strong>File system</strong> (unless <code>classpath:</code> prefix is used)</li>
+</ol>
+<p>All paths are normalized automatically via <code>FileUtil.simplifyPath()</code>. The <code>classpath:</code> prefix restricts resolution to classpath only.</p>
+
+<h3>Custom resource resolver</h3>
+<pre><code><span class="type">IChangelogRunner</span> runner = <span class="type">ChangelogRunnerBuilder</span>.builder()
+    .dataSource(dataSource)
+    .changelog(<span class="string">"db/changelog.db.yaml"</span>)
+    .resourceResolver(customResolver)
+    .build();</code></pre>
+
+<p>Implement <code>IChangelogResourceResolver</code> to provide custom resolution logic (e.g., loading from a database, remote URL, or encrypted store).</p>
+</section>
+
+<!-- EXTERNAL FORMAT IMPORT -->
+<section id="external-format-import">
+<h2>External Format Import</h2>
+<p>The library can parse and import changelogs from external tools, allowing gradual migration to the DB-Changelog format.</p>
+
+<h3>Supported import formats</h3>
+<table>
+  <tr><th>Source</th><th>Formats</th><th>Detection</th></tr>
+  <tr><td>Liquibase</td><td>XML, YAML, JSON, SQL</td><td><code>databaseChangeLog</code> root key, Liquibase XML namespace, <code>--changeset</code> directives</td></tr>
+  <tr><td>Flyway</td><td>SQL</td><td><code>V*__*.sql</code> (versioned), <code>R__*.sql</code> (repeatable) naming convention</td></tr>
+</table>
+
+<h3>Liquibase SQL import (current)</h3>
+<p>The built-in <code>LiquibaseSqlChangelogParser</code> reads <code>.sql</code> files with <code>--changeset author:id</code> directives:</p>
+<pre><code><span class="comment">--liquibase formatted sql</span>
+
+<span class="comment">--changeset john:create-users</span>
+CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
+
+<span class="comment">--rollback DROP TABLE users;</span>
+
+<span class="comment">--changeset john:add-email</span>
+ALTER TABLE users ADD COLUMN email VARCHAR(255);</code></pre>
+
+<h3>Format migration (planned)</h3>
+<p>A migration tool will convert external changelogs to the DB-Changelog format:</p>
+<pre><code><span class="comment">// Liquibase migration</span>
+<span class="type">IChangelogMigrator</span> migrator = <span class="type">ChangelogMigratorBuilder</span>.builder()
+    .sourceChangelog(<span class="string">"classpath:db/changelog/liquibase-master.xml"</span>)
+    .outputDirectory(<span class="string">"db/changelog/migrated/"</span>)
+    .outputFormat(<span class="string">"YAML"</span>)
+    .build();
+migrator.migrate();
+
+<span class="comment">// Flyway migration</span>
+<span class="type">IChangelogMigrator</span> migrator = <span class="type">ChangelogMigratorBuilder</span>.builder()
+    .flywayDirectory(<span class="string">"classpath:db/migration/"</span>)
+    .flywayHistoryTable(dataSource)
+    .outputDirectory(<span class="string">"db/changelog/migrated/"</span>)
+    .outputFormat(<span class="string">"YAML"</span>)
+    .build();
+migrator.migrate();</code></pre>
+
+<p>The Flyway migrator reads <code>V*__*.sql</code> files (versioned migrations), <code>R__*.sql</code> files (mapped to <code>runOnChange: true</code>), and the <code>flyway_schema_history</code> table to preserve applied state.</p>
+</section>
+
+<!-- COMPARISON -->
+<section id="comparison">
+<h2>Comparison with Other Tools</h2>
+
+<h3>vs. Liquibase</h3>
+<table>
+  <tr><th>Feature</th><th>toolarium-db-changelog</th><th>Liquibase</th></tr>
+  <tr><td>Locking</td><td>Self-healing lease expiry via leader-election (no manual <code>releaseLocks</code>)</td><td>Database row lock, requires manual release on crash</td></tr>
+  <tr><td>Checksums</td><td>SHA-256, stable, no version prefix</td><td>MD5/SHA with version prefix, requires <code>clearCheckSums</code> after upgrades</td></tr>
+  <tr><td>Configuration</td><td>Explicit builder pattern</td><td>Thread-local scope chain</td></tr>
+  <tr><td>Context/Label</td><td>Unified concept</td><td>Two separate mechanisms</td></tr>
+  <tr><td>Custom changes</td><td>Single <code>ICustomChangelogEntry</code></td><td>Three interfaces (CustomTaskChange, CustomSqlChange, CustomTaskRollback)</td></tr>
+  <tr><td>Own format</td><td><code>.db.yaml</code> / <code>.db.xml</code> / <code>.db.json</code> with less nesting</td><td>Verbose XML-centric format</td></tr>
+  <tr><td>Extensions</td><td>Java SPI, no classpath scanning</td><td>Classpath scanning for extensions</td></tr>
+  <tr><td>Tracking table</td><td>Configurable name</td><td>Fixed <code>DATABASECHANGELOG</code></td></tr>
+  <tr><td>Import</td><td>Can read Liquibase changelogs</td><td>N/A (is the source)</td></tr>
+</table>
+
+<h3>vs. Flyway</h3>
+<table>
+  <tr><th>Feature</th><th>toolarium-db-changelog</th><th>Flyway</th></tr>
+  <tr><td>Rollback</td><td>Free and built-in (auto-rollback, Level 1 SQL rollback)</td><td>Paid feature (Teams/Enterprise only)</td></tr>
+  <tr><td>Dry-run</td><td>Free via <code>generateRollbackSql()</code></td><td>Paid feature</td></tr>
+  <tr><td>Preconditions</td><td>Full system (dbms, tableExists, sqlCheck, and/or/not)</td><td>None</td></tr>
+  <tr><td>Database abstraction</td><td>Structured DDL change types with per-dialect SQL generators</td><td>SQL-only (no abstraction)</td></tr>
+  <tr><td>Multiple changesets per file</td><td>Yes, individually tracked</td><td>No, one migration per file</td></tr>
+  <tr><td>runAlways / runOnChange</td><td>Yes, per changeset</td><td>Repeatable only (R__ files)</td></tr>
+  <tr><td>Context/Label filtering</td><td>Yes</td><td>No</td></tr>
+  <tr><td>Diff / generateChangelog</td><td>Planned</td><td>No</td></tr>
+  <tr><td>Import</td><td>Can read Flyway migration files</td><td>N/A (is the source)</td></tr>
+</table>
+
+</section>
+
+<!-- SECURITY -->
+<section id="security">
+<h2>Security</h2>
+<div class="highlight-box">
+  <strong>Security is built in, not bolted on.</strong> The library applies defense-in-depth across parsing, SQL generation, and execution.
+</div>
+<table>
+  <tr><th>Protection</th><th>Description</th></tr>
+  <tr><td><code>SQL identifier validation</code></td><td>Table and lock table names validated against <code>[A-Za-z_][A-Za-z0-9_]*</code></td></tr>
+  <tr><td><code>Safe YAML parsing</code></td><td>SnakeYAML SafeConstructor prevents arbitrary class instantiation</td></tr>
+  <tr><td><code>XXE protection</code></td><td>XML parsing disables external entities, DTD, entity references, external DTD/schema access</td></tr>
+  <tr><td><code>Default value escaping</code></td><td>Single quotes doubled in SQL default values to prevent injection</td></tr>
+  <tr><td><code>Regex-safe splitting</code></td><td>SQL statement delimiters treated as literal strings via <code>Pattern.quote()</code></td></tr>
+  <tr><td><code>Statement timeout</code></td><td>All SQL statements have a 300-second timeout to prevent indefinite blocking</td></tr>
+  <tr><td><code>Identity validation</code></td><td>Changeset id and author reject the <code>|</code> separator character to prevent key collisions</td></tr>
+  <tr><td><code>Path normalization</code></td><td>All resource paths normalized via FileUtil to prevent traversal</td></tr>
+  <tr><td><code>DataSource validation</code></td><td>Null checks before every database operation</td></tr>
+  <tr><td><code>Safe lock release</code></td><td>Lock release exceptions suppressed to avoid masking the original error</td></tr>
+</table>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+<h2>Architecture</h2>
+<h3>Core concepts</h3>
+<ul>
+  <li><strong>Changelog</strong>: root container that references changesets and includes other changelogs</li>
+  <li><strong>ChangeSet</strong>: atomic migration unit identified by <code>(id, author, filePath)</code> triple</li>
+  <li><strong>IChangelogEntry</strong>: single operation inside a changeset (createTable, addColumn, sql, ...)</li>
+  <li><strong>Tracking table</strong> (<code>DB_CHANGELOG</code>): records applied changesets with SHA-256 checksums</li>
+  <li><strong>Lock table</strong> (<code>DB_CHANGELOG_LOCK</code>): managed by <a href="https://github.com/toolarium/toolarium-leader-election">toolarium-leader-election</a> (DATABASE strategy)</li>
+  <li><strong>IChangelogContext</strong>: runtime execution context (active contexts and labels)</li>
+</ul>
+
+<h3>Package structure</h3>
+<pre><code>com.github.toolarium.db.changelog
+  IChangelogRunner                   <span class="comment"># Main entry point interface</span>
+  IChangelogContext                  <span class="comment"># Runtime execution context</span>
+  ChangelogRunnerBuilder             <span class="comment"># Builder for configuration</span>
+  config/                            <span class="comment"># Configuration, policies, enums</span>
+  model/                             <span class="comment"># Public model classes and interfaces</span>
+    column/ table/ index/ constraint/ sequence/ view/ sql/ dml/ precondition/
+  exception/                         <span class="comment"># Exception hierarchy</span>
+  impl/                              <span class="comment"># All implementation details</span>
+    checksum/  executor/  lock/  parser/  resolver/  rollback/  sql/  tracking/  precondition/</code></pre>
+
+<h3>Design principles</h3>
+<ul>
+  <li>All interfaces use the <code>I</code> prefix (e.g., <code>IChangelogRunner</code>)</li>
+  <li>All implementations end with <code>Impl</code> suffix in <code>impl/</code> subpackages</li>
+  <li>All factories and utilities use the singleton HOLDER pattern</li>
+  <li>SHA-256 checksums (stable algorithm, no version prefix)</li>
+  <li>Builder pattern for configuration</li>
+  <li>Model classes are immutable with hashCode/equals/toString</li>
+</ul>
+</section>
+
+<!-- DATABASES -->
+<section id="databases">
+<h2>Supported Databases</h2>
+<p>The following databases are integration tested via Testcontainers on every build:</p>
+
+<h3>Integration tested</h3>
+<table>
+  <tr><th>Database</th><th>Container</th><th>Notes</th></tr>
+  <tr><td><code>H2</code></td><td>Embedded (in-memory)</td><td>Primary unit test database, always available</td></tr>
+  <tr><td><code>PostgreSQL</code></td><td>postgres:16-alpine</td><td>Full support, TIMESTAMP column type</td></tr>
+  <tr><td><code>MySQL</code></td><td>mysql:8.0</td><td>Full support, derived table subqueries for self-referencing queries</td></tr>
+  <tr><td><code>MariaDB</code></td><td>mariadb:11</td><td>Full support, TEXT instead of CLOB</td></tr>
+  <tr><td><code>SQL Server</code></td><td>mssql/server:2022-latest</td><td>Full support, DATETIME instead of TIMESTAMP (binary type in SQL Server)</td></tr>
+  <tr><td><code>Oracle</code></td><td>gvenzl/oracle-xe:21-slim-faststart</td><td>Full support, alias syntax without AS keyword</td></tr>
+  <tr><td><code>HSQLDB</code></td><td>Embedded (in-memory)</td><td>Full support, embedded database</td></tr>
+  <tr><td><code>Derby</code></td><td>Embedded (in-memory)</td><td>Full support, Apache Derby</td></tr>
+  <tr><td><code>SQLite</code></td><td>Embedded (in-memory)</td><td>Full support, lightweight embedded</td></tr>
+  <tr><td><code>CockroachDB</code></td><td>cockroachdb/cockroach:v24.1.0</td><td>Full support, PostgreSQL wire-compatible</td></tr>
+  <tr><td><code>DB2</code></td><td>db2_community/db2:11.5.9.0</td><td>Full support, slow container startup (2-5 min)</td></tr>
+  <tr><td><code>Firebird</code></td><td>jacobalberty/firebird:v4.0</td><td>Full support via Jaybird JDBC driver</td></tr>
+  <tr><td><code>EnterpriseDB</code></td><td>edb-postgres-advanced:16</td><td>Full support, PostgreSQL wire-compatible</td></tr>
+  <tr><td><code>TiDB</code></td><td>pingcap/tidb:v7.5.0</td><td>Full support, MySQL wire-compatible</td></tr>
+  <tr><td><code>YugabyteDB</code></td><td>yugabytedb/yugabyte:2.20.1.0</td><td>Full support, PostgreSQL wire-compatible</td></tr>
+</table>
+
+<p>Run integration tests with: <code>source cb --setenv &amp;&amp; cb -Pintegration</code></p>
+
+<h3>Additional databases (via generic ANSI SQL, not tested)</h3>
+<p>The generic SQL generator produces standard ANSI SQL that works on any JDBC-compliant database. The following ANSI SQL-compliant databases are expected to work but have not been integration tested:</p>
+<table>
+  <tr><th>Database</th><th>Reason not tested</th></tr>
+  <tr><td><code>Snowflake</code></td><td>Cloud-only, requires account, no local Docker image</td></tr>
+  <tr><td><code>SAP HANA</code></td><td>Requires SAP license, no public Docker image</td></tr>
+  <tr><td><code>Sybase / SAP ASE</code></td><td>No public Docker image, proprietary driver</td></tr>
+  <tr><td><code>Informix</code></td><td>Complex container setup, limited community use</td></tr>
+</table>
+
+<h3>Database-specific adaptations</h3>
+<p>The library automatically detects the database via JDBC metadata and adapts:</p>
+<table>
+  <tr><th>Adaptation</th><th>Databases affected</th></tr>
+  <tr><td>DATETIME instead of TIMESTAMP for datetime columns</td><td>SQL Server (where TIMESTAMP is a binary rowversion type)</td></tr>
+  <tr><td>TEXT instead of CLOB for large text columns</td><td>MySQL, MariaDB</td></tr>
+  <tr><td>Derived table subqueries for self-referencing INSERT/UPDATE</td><td>MySQL, MariaDB</td></tr>
+  <tr><td>Table alias without AS keyword</td><td>Oracle</td></tr>
+  <tr><td>Case-insensitive table existence check (upper + lowercase)</td><td>PostgreSQL, MySQL</td></tr>
+</table>
+</section>
+
+<!-- LICENSE -->
+<section id="license">
+<h2>License</h2>
+<p>This project is licensed under the <a href="https://github.com/toolarium/toolarium-db-changelog/blob/master/LICENSE">MPL-2.0 License</a>.</p>
+</section>
+
+</div>
+
+<footer>
+  toolarium-db-changelog &copy; 2026 toolarium. Built with <a href="https://github.com/toolarium/common-build">cb</a>.
+</footer>
+
+</body>
+</html>

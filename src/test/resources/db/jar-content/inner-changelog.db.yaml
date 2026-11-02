@@ -1,0 +1,6 @@
+format: toolarium-db-changelog/1.0
+
+changesets:
+  - id: inner-jar-resource
+    changes:
+      - sql: "SELECT 2"

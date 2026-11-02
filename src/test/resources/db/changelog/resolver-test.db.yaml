@@ -1,0 +1,7 @@
+format: toolarium-db-changelog/1.0
+
+changesets:
+  - id: test-resource
+    changes:
+      - sql: "SELECT 1"
+

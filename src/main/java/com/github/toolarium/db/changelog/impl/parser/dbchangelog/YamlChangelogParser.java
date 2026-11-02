@@ -234,11 +234,17 @@ public class YamlChangelogParser implements IChangelogParser {
         boolean failOnError = getBoolean(changesetMap, "failOnError", true);
         boolean runInTransaction = getBoolean(changesetMap, "runInTransaction", true);
 
+        String filePath = getString(changesetMap, "filePath", null);
+
         List<String> contexts = getStringList(changesetMap, "context");
         List<String> labels = getStringList(changesetMap, "labels");
         ChangelogPreconditionContainer preconditions = parsePreconditions(changesetMap);
 
-        ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(id, author, physicalPath);
+        String effectivePath = physicalPath;
+        if (filePath != null) {
+            effectivePath = filePath;
+        }
+        ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(id, author, effectivePath);
 
         List<IChangelogEntry> entries = parseEntries(changesetMap, "changes", parameterResolver, physicalPath);
         List<IChangelogEntry> rollbackEntries = parseEntries(changesetMap, "rollback", parameterResolver, physicalPath);
@@ -247,8 +253,12 @@ public class YamlChangelogParser implements IChangelogParser {
             throw new ChangelogParseException("Changeset [" + id + "] in [" + physicalPath + "] has no changes.");
         }
 
-        return new ChangelogChangeSet(identity, entries, rollbackEntries, comment,
+        ChangelogChangeSet changeSet = new ChangelogChangeSet(identity, entries, rollbackEntries, comment,
                 runAlways, runOnChange, failOnError, runInTransaction, contexts, labels, preconditions);
+        if (filePath != null) {
+            changeSet.setFilePath(filePath);
+        }
+        return changeSet;
     }
 
 

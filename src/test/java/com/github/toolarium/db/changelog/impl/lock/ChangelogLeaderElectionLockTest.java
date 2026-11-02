@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.ChangelogRunnerBuilder;
+import com.github.toolarium.db.changelog.IChangelogLock;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
 import com.github.toolarium.db.changelog.impl.lock.impl.ChangelogLeaderElectionLockImpl;
 import com.github.toolarium.db.changelog.model.Changelog;

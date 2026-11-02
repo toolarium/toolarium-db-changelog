@@ -32,6 +32,73 @@ dependencies {
 
 
 /************************************************************************************************************************
+ * Integration test source set (only compiled and run with -Pintegration)
+ ************************************************************************************************************************/
+if (project.hasProperty('integration')) {
+    sourceSets {
+        integrationTest {
+            java.srcDirs = ['src/integrationTest/java']
+            compileClasspath += sourceSets.test.compileClasspath + sourceSets.test.output
+            runtimeClasspath += sourceSets.test.runtimeClasspath + sourceSets.test.output
+        }
+    }
+
+    dependencies {
+        // Testcontainers framework
+        integrationTestImplementation 'org.testcontainers:testcontainers:1.21.4'
+        integrationTestImplementation 'org.testcontainers:junit-jupiter:1.21.4'
+
+        // Testcontainer modules (PostgreSQL, MySQL, MariaDB, SQL Server, Oracle, CockroachDB, DB2, TiDB, YugabyteDB)
+        integrationTestImplementation 'org.testcontainers:postgresql:1.21.4'
+        integrationTestImplementation 'org.testcontainers:mysql:1.21.4'
+        integrationTestImplementation 'org.testcontainers:mariadb:1.21.4'
+        integrationTestImplementation 'org.testcontainers:mssqlserver:1.21.4'
+        integrationTestImplementation 'org.testcontainers:oracle-xe:1.21.4'
+        integrationTestImplementation 'org.testcontainers:cockroachdb:1.21.4'
+        integrationTestImplementation 'org.testcontainers:db2:1.21.4'
+        integrationTestImplementation 'org.testcontainers:tidb:1.21.4'
+        integrationTestImplementation 'org.testcontainers:yugabytedb:1.21.4'
+
+        // JDBC drivers (PostgreSQL also used by CockroachDB, EnterpriseDB, YugabyteDB; MySQL also used by TiDB)
+        integrationTestImplementation 'org.postgresql:postgresql:42.7.13'
+        integrationTestImplementation 'com.mysql:mysql-connector-j:9.3.0'
+        integrationTestImplementation 'org.mariadb.jdbc:mariadb-java-client:3.5.3'
+        integrationTestImplementation 'com.microsoft.sqlserver:mssql-jdbc:12.10.0.jre11'
+        integrationTestImplementation 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
+        integrationTestImplementation 'com.ibm.db2:jcc:11.5.9.0'
+        integrationTestImplementation 'org.firebirdsql.jdbc:jaybird:5.0.6.java11'
+
+        // Embedded databases (no Docker needed: H2, HSQLDB, Derby, SQLite)
+        integrationTestImplementation 'org.hsqldb:hsqldb:2.7.4'
+        integrationTestImplementation 'org.apache.derby:derby:10.16.1.1'
+        integrationTestImplementation 'org.apache.derby:derbytools:10.16.1.1'
+        integrationTestImplementation 'org.xerial:sqlite-jdbc:3.49.1.0'
+    }
+
+    tasks.named('test') {
+        testClassesDirs += sourceSets.integrationTest.output.classesDirs
+        classpath += sourceSets.integrationTest.runtimeClasspath
+    }
+}
+
+
+/************************************************************************************************************************
+ * Pass testcontainers configuration to the test JVM
+ ************************************************************************************************************************/
+tasks.withType(Test).configureEach {
+    useJUnitPlatform {
+        if (!project.hasProperty('integration')) {
+            excludeTags 'integration'
+        }
+    }
+    if (project.hasProperty('integration') && project.ext.has('containerCmd') && project.ext.containerCmd == 'nerdctl') {
+        jvmArgs '-Dtc.host=npipe:////./pipe/docker_engine', '-Dryuk.disabled=true', '-Dapi.version=1.45'
+        environment 'DOCKER_HOST', 'npipe:////./pipe/docker_engine'
+    }
+}
+
+
+/************************************************************************************************************************
  * Suppress obsolete source/target warnings when compiling with a newer JDK
  ************************************************************************************************************************/
 tasks.withType(JavaCompile) {

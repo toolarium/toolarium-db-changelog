@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog">
+    <changeSet id="ext-create-table" author="testauthor">
+        <sql>CREATE TABLE ext_xml_test (id INT PRIMARY KEY, name VARCHAR(100))</sql>
+        <rollback>
+            <sql>DROP TABLE ext_xml_test</sql>
+        </rollback>
+    </changeSet>
+    <changeSet id="ext-insert-data" author="testauthor">
+        <sql>INSERT INTO ext_xml_test (id, name) VALUES (1, 'Test')</sql>
+    </changeSet>
+</databaseChangeLog>

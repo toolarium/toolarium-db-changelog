@@ -103,6 +103,16 @@ public interface IChangelogRunner {
     List<IChangelogTrackingEntry> history() throws ChangelogException;
 
     /**
+     * Validate the changelog against the tracking table. Checks for checksum
+     * mismatches between the current changelog and previously applied changesets.
+     * Does not execute any changes.
+     *
+     * @throws ChangelogException if validation fails or mismatches are found
+     */
+    void validate() throws ChangelogException;
+
+
+    /**
      * Clear all stored checksums. Forces recalculation on next run.
      *
      * @throws ChangelogException if clearing fails

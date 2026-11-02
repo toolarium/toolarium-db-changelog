@@ -5,9 +5,10 @@
  */
 package com.github.toolarium.db.changelog.impl.tracking.impl;
 
+import com.github.toolarium.db.changelog.IChangelogTracker;
 import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
-import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
+import com.github.toolarium.db.changelog.impl.sql.util.ChangelogDatabaseTypeUtil;
 import com.github.toolarium.db.changelog.model.ChangelogExecutionType;
 import com.github.toolarium.db.changelog.model.ChangelogTrackingEntry;
 import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
@@ -53,7 +54,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#ensureTrackingTable(Connection)
+     * @see com.github.toolarium.db.changelog.IChangelogTracker#ensureTrackingTable(Connection)
      */
     @Override
     public void ensureTrackingTable(Connection connection) throws ChangelogException {
@@ -67,12 +68,13 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
             }
             LOG.info("Creating tracking table [" + tableName + BRACKET_DOT);
 
+            String dateTimeType = ChangelogDatabaseTypeUtil.getInstance().getDateTimeType(connection);
             String sql = "CREATE TABLE " + tableName + " ("
-                    + "id VARCHAR(255) NOT NULL, "
-                    + "author VARCHAR(255) NOT NULL, "
-                    + "filepath VARCHAR(512) NOT NULL, "
+                    + "id VARCHAR(200) NOT NULL, "
+                    + "author VARCHAR(200) NOT NULL, "
+                    + "filepath VARCHAR(350) NOT NULL, "
                     + "checksum VARCHAR(64), "
-                    + "date_executed TIMESTAMP NOT NULL, "
+                    + "date_executed " + dateTimeType + " NOT NULL, "
                     + "order_executed INT NOT NULL, "
                     + "execution_type VARCHAR(16) NOT NULL, "
                     + "description VARCHAR(1024), "
@@ -97,7 +99,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#getAppliedChangeSets(Connection)
+     * @see com.github.toolarium.db.changelog.IChangelogTracker#getAppliedChangeSets(Connection)
      */
     @Override
     public List<IChangelogTrackingEntry> getAppliedChangeSets(Connection connection) throws ChangelogException {
@@ -138,7 +140,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#markChangeSetExecuted(Connection, IChangelogChangeSet, String, ChangelogExecutionType, String)
+     * @see com.github.toolarium.db.changelog.IChangelogTracker#markChangeSetExecuted(Connection, IChangelogChangeSet, String, ChangelogExecutionType, String)
      */
     @Override
     public void markChangeSetExecuted(Connection connection, IChangelogChangeSet changeSet, String checksum,
@@ -148,7 +150,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
         String sql = "INSERT INTO " + tableName
                 + " (id, author, filepath, checksum, date_executed, order_executed, "
                 + "execution_type, description, comments, deployment_id, library_version) "
-                + "VALUES (?, ?, ?, ?, ?, COALESCE((SELECT MAX(order_executed) FROM " + tableName + "), 0) + 1, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, COALESCE((SELECT m FROM (SELECT MAX(order_executed) m FROM " + tableName + ") t), 0) + 1, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, changeSet.getIdentity().getId());
@@ -172,7 +174,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#removeChangeSetEntry(Connection, IChangelogChangeSetIdentity)
+     * @see com.github.toolarium.db.changelog.IChangelogTracker#removeChangeSetEntry(Connection, IChangelogChangeSetIdentity)
      */
     @Override
     public void removeChangeSetEntry(Connection connection, IChangelogChangeSetIdentity identity) throws ChangelogException {
@@ -193,12 +195,12 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#tagLastApplied(Connection, String)
+     * @see com.github.toolarium.db.changelog.IChangelogTracker#tagLastApplied(Connection, String)
      */
     @Override
     public void tagLastApplied(Connection connection, String tagName) throws ChangelogException {
         String sql = "UPDATE " + tableName + " SET tag = ? WHERE order_executed = "
-                + "(SELECT MAX(order_executed) FROM " + tableName + ")";
+                + "(SELECT m FROM (SELECT MAX(order_executed) m FROM " + tableName + ") t)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, tagName);
@@ -216,7 +218,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#clearChecksums(Connection)
+     * @see com.github.toolarium.db.changelog.IChangelogTracker#clearChecksums(Connection)
      */
     @Override
     public void clearChecksums(Connection connection) throws ChangelogException {
@@ -248,8 +250,13 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
                 return true;
             }
         }
-        // Some databases are case-sensitive; try uppercase as fallback
+        // Some databases are case-sensitive; try uppercase and lowercase as fallback
         try (ResultSet rs = meta.getTables(null, null, tableName.toUpperCase(), new String[]{"TABLE"})) {
+            if (rs.next()) {
+                return true;
+            }
+        }
+        try (ResultSet rs = meta.getTables(null, null, tableName.toLowerCase(), new String[]{"TABLE"})) {
             if (rs.next()) {
                 return true;
             }

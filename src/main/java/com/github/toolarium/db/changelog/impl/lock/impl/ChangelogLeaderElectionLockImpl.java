@@ -5,8 +5,8 @@
  */
 package com.github.toolarium.db.changelog.impl.lock.impl;
 
+import com.github.toolarium.db.changelog.IChangelogLock;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
-import com.github.toolarium.db.changelog.impl.lock.IChangelogLock;
 import com.github.toolarium.leader.election.ILeaderElector;
 import com.github.toolarium.leader.election.LeaderElectionFactory;
 import com.github.toolarium.leader.election.exception.LeaderElectionException;
@@ -58,7 +58,7 @@ public class ChangelogLeaderElectionLockImpl implements IChangelogLock {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#acquireLock()
+     * @see com.github.toolarium.db.changelog.IChangelogLock#acquireLock()
      */
     @Override
     public void acquireLock() throws ChangelogException {
@@ -95,7 +95,7 @@ public class ChangelogLeaderElectionLockImpl implements IChangelogLock {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#releaseLock()
+     * @see com.github.toolarium.db.changelog.IChangelogLock#releaseLock()
      */
     @Override
     public void releaseLock() throws ChangelogException {
@@ -113,7 +113,7 @@ public class ChangelogLeaderElectionLockImpl implements IChangelogLock {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#isLocked()
+     * @see com.github.toolarium.db.changelog.IChangelogLock#isLocked()
      */
     @Override
     public boolean isLocked() {

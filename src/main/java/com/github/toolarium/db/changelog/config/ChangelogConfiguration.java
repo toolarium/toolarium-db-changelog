@@ -33,6 +33,9 @@ public class ChangelogConfiguration {
     private List<String> contexts;
     private List<String> labels;
     private String defaultAuthor;
+    private ChangelogSnapshotPolicy snapshotPolicy;
+    private ChangelogRollbackPolicy rollbackPolicy;
+    private ChangelogObjectQuotingStrategy objectQuotingStrategy;
 
     /**
      * Constructor for ChangelogConfiguration
@@ -42,6 +45,9 @@ public class ChangelogConfiguration {
         this.lockTableName = DEFAULT_LOCK_TABLE;
         this.leaderElectionEnabled = false;
         this.defaultAuthor = System.getProperty("user.name", "default");
+        this.snapshotPolicy = ChangelogSnapshotPolicy.NONE;
+        this.rollbackPolicy = ChangelogRollbackPolicy.WARN;
+        this.objectQuotingStrategy = ChangelogObjectQuotingStrategy.NONE;
     }
 
     /**
@@ -203,6 +209,73 @@ public class ChangelogConfiguration {
         this.defaultAuthor = defaultAuthor;
         return this;
     }
+
+
+    /**
+     * Get the snapshot policy.
+     *
+     * @return the snapshot policy
+     */
+    public ChangelogSnapshotPolicy getSnapshotPolicy() {
+        return snapshotPolicy;
+    }
+
+
+    /**
+     * Set the snapshot policy.
+     *
+     * @param snapshotPolicy the snapshot policy
+     * @return this configuration for chaining
+     */
+    public ChangelogConfiguration setSnapshotPolicy(ChangelogSnapshotPolicy snapshotPolicy) {
+        this.snapshotPolicy = snapshotPolicy;
+        return this;
+    }
+
+
+    /**
+     * Get the rollback policy.
+     *
+     * @return the rollback policy
+     */
+    public ChangelogRollbackPolicy getRollbackPolicy() {
+        return rollbackPolicy;
+    }
+
+
+    /**
+     * Set the rollback policy.
+     *
+     * @param rollbackPolicy the rollback policy
+     * @return this configuration for chaining
+     */
+    public ChangelogConfiguration setRollbackPolicy(ChangelogRollbackPolicy rollbackPolicy) {
+        this.rollbackPolicy = rollbackPolicy;
+        return this;
+    }
+
+
+    /**
+     * Get the object quoting strategy.
+     *
+     * @return the object quoting strategy
+     */
+    public ChangelogObjectQuotingStrategy getObjectQuotingStrategy() {
+        return objectQuotingStrategy;
+    }
+
+
+    /**
+     * Set the object quoting strategy.
+     *
+     * @param objectQuotingStrategy the object quoting strategy
+     * @return this configuration for chaining
+     */
+    public ChangelogConfiguration setObjectQuotingStrategy(ChangelogObjectQuotingStrategy objectQuotingStrategy) {
+        this.objectQuotingStrategy = objectQuotingStrategy;
+        return this;
+    }
+
 
     /**
      * Validate the configuration.

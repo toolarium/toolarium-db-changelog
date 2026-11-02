@@ -5,16 +5,17 @@
  */
 package com.github.toolarium.db.changelog.impl.executor.impl;
 
+import com.github.toolarium.db.changelog.IChangelogChecksumGenerator;
 import com.github.toolarium.db.changelog.IChangelogContext;
+import com.github.toolarium.db.changelog.IChangelogExecutor;
+import com.github.toolarium.db.changelog.IChangelogTracker;
+import com.github.toolarium.db.changelog.config.ChangelogRollbackPolicy;
 import com.github.toolarium.db.changelog.exception.ChangelogChangeSetExecutionException;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
-import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
-import com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor;
 import com.github.toolarium.db.changelog.impl.precondition.IChangelogPreconditionEvaluator;
 import com.github.toolarium.db.changelog.impl.rollback.ChangelogSqlRollbackGeneratorFactory;
 import com.github.toolarium.db.changelog.impl.rollback.IChangelogSqlRollbackGenerator;
 import com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator;
-import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
 import com.github.toolarium.db.changelog.model.ChangelogExecutionType;
 import com.github.toolarium.db.changelog.model.IChangelog;
 import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
@@ -52,6 +53,7 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
     private final IChangelogSqlGenerator sqlGenerator;
     private final IChangelogSqlRollbackGenerator sqlRollbackGenerator;
     private final IChangelogPreconditionEvaluator preconditionEvaluator;
+    private final ChangelogRollbackPolicy rollbackPolicy;
 
 
     /**
@@ -60,20 +62,22 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
      * @param tracker the tracking table manager
      * @param checksumGenerator the checksum generator
      * @param sqlGenerator the SQL generator for structured change types
+     * @param rollbackPolicy the rollback policy for missing rollback definitions
      */
     public ChangelogExecutorImpl(IChangelogTracker tracker, IChangelogChecksumGenerator checksumGenerator,
-                                 IChangelogSqlGenerator sqlGenerator) {
+                                 IChangelogSqlGenerator sqlGenerator, ChangelogRollbackPolicy rollbackPolicy) {
         this.tracker = tracker;
         this.checksumGenerator = checksumGenerator;
         this.sqlGenerator = sqlGenerator;
         this.sqlRollbackGenerator = ChangelogSqlRollbackGeneratorFactory.getInstance().getSqlRollbackGenerator();
         this.preconditionEvaluator = com.github.toolarium.db.changelog.impl.precondition.ChangelogPreconditionEvaluatorFactory
                 .getInstance().getPreconditionEvaluator();
+        this.rollbackPolicy = rollbackPolicy;
     }
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor#update(Connection, IChangelog, IChangelogContext)
+     * @see com.github.toolarium.db.changelog.IChangelogExecutor#update(Connection, IChangelog, IChangelogContext)
      */
     @Override
     public void update(Connection connection, IChangelog changelog, IChangelogContext context) throws ChangelogException {
@@ -82,7 +86,7 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor#update(Connection, IChangelog, int, IChangelogContext)
+     * @see com.github.toolarium.db.changelog.IChangelogExecutor#update(Connection, IChangelog, int, IChangelogContext)
      */
     @Override
     public void update(Connection connection, IChangelog changelog, int count, IChangelogContext context) throws ChangelogException {
@@ -222,6 +226,8 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
     private void executeSqlEntry(Connection connection, IChangelogEntry entry) throws SQLException, ChangelogChangeSetExecutionException {
         if (entry instanceof SqlChangelogEntry) {
             executeSqlChangelogEntry(connection, (SqlChangelogEntry) entry);
+        } else if (entry instanceof com.github.toolarium.db.changelog.model.dml.CustomChangelogEntry) {
+            executeCustomEntry(connection, (com.github.toolarium.db.changelog.model.dml.CustomChangelogEntry) entry);
         } else if (sqlGenerator.supports(entry, connection)) {
             List<String> statements = sqlGenerator.generateSql(entry);
             for (String stmt : statements) {
@@ -229,6 +235,26 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
             }
         } else {
             throw new ChangelogChangeSetExecutionException("Unsupported entry type: " + entry.getClass().getName());
+        }
+    }
+
+
+    /**
+     * Execute a custom changelog entry.
+     *
+     * @param connection the database connection
+     * @param entry the custom entry
+     * @throws ChangelogChangeSetExecutionException if execution fails
+     */
+    private void executeCustomEntry(Connection connection,
+                                    com.github.toolarium.db.changelog.model.dml.CustomChangelogEntry entry) throws ChangelogChangeSetExecutionException {
+        try {
+            entry.getCustomEntry().execute(connection);
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Custom change failed [" + entry.getClassName() + "]: " + e.getMessage(), e);
+            }
+            throw new ChangelogChangeSetExecutionException("Custom change [" + entry.getClassName() + "] failed.", e);
         }
     }
 
@@ -305,7 +331,7 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor#rollback(Connection, IChangelog, int)
+     * @see com.github.toolarium.db.changelog.IChangelogExecutor#rollback(Connection, IChangelog, int)
      */
     @Override
     public void rollback(Connection connection, IChangelog changelog, int count) throws ChangelogException {
@@ -315,7 +341,7 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor#rollbackToTag(Connection, IChangelog, String)
+     * @see com.github.toolarium.db.changelog.IChangelogExecutor#rollbackToTag(Connection, IChangelog, String)
      */
     @Override
     public void rollbackToTag(Connection connection, IChangelog changelog, String tag) throws ChangelogException {
@@ -325,7 +351,7 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor#rollbackToDate(Connection, IChangelog, Instant)
+     * @see com.github.toolarium.db.changelog.IChangelogExecutor#rollbackToDate(Connection, IChangelog, Instant)
      */
     @Override
     public void rollbackToDate(Connection connection, IChangelog changelog, Instant dateTime) throws ChangelogException {
@@ -335,7 +361,7 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
 
 
     /**
-     * @see com.github.toolarium.db.changelog.impl.executor.IChangelogExecutor#generateRollbackSql(Connection, IChangelog, int)
+     * @see com.github.toolarium.db.changelog.IChangelogExecutor#generateRollbackSql(Connection, IChangelog, int)
      */
     @Override
     public List<String> generateRollbackSql(Connection connection, IChangelog changelog, int count) throws ChangelogException {
@@ -366,10 +392,16 @@ public class ChangelogExecutorImpl implements IChangelogExecutor {
             List<String> statements = getRollbackStatements(entry, changeSetMap, connection);
 
             if (statements.isEmpty()) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("No rollback available for changeset [" + entry + LOG_SUFFIX);
+                if (rollbackPolicy == ChangelogRollbackPolicy.FAIL) {
+                    throw new ChangelogException("No rollback available for changeset ["
+                            + entry.getId() + KEY_SEPARATOR + entry.getAuthor() + LOG_SUFFIX);
                 }
-                LOG.warn("No rollback available for changeset [" + entry.getId() + KEY_SEPARATOR + entry.getAuthor() + "]. Skipping.");
+                if (rollbackPolicy == ChangelogRollbackPolicy.WARN) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("No rollback available for changeset [" + entry + LOG_SUFFIX);
+                    }
+                    LOG.warn("No rollback available for changeset [" + entry.getId() + KEY_SEPARATOR + entry.getAuthor() + "]. Skipping.");
+                }
                 continue;
             }
 

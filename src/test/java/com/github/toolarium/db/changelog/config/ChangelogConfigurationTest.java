@@ -35,6 +35,9 @@ public class ChangelogConfigurationTest {
         assertEquals("DB_CHANGELOG_LOCK", config.getLockTableName());
         assertFalse(config.isLeaderElectionEnabled());
         assertNotNull(config.getDefaultAuthor());
+        assertEquals(ChangelogSnapshotPolicy.NONE, config.getSnapshotPolicy());
+        assertEquals(ChangelogRollbackPolicy.WARN, config.getRollbackPolicy());
+        assertEquals(ChangelogObjectQuotingStrategy.NONE, config.getObjectQuotingStrategy());
     }
 
 

@@ -6,6 +6,9 @@
 package com.github.toolarium.db.changelog;
 
 import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
+import com.github.toolarium.db.changelog.config.ChangelogObjectQuotingStrategy;
+import com.github.toolarium.db.changelog.config.ChangelogRollbackPolicy;
+import com.github.toolarium.db.changelog.config.ChangelogSnapshotPolicy;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
 import java.util.List;
 import javax.sql.DataSource;
@@ -19,6 +22,11 @@ import javax.sql.DataSource;
 public final class ChangelogRunnerBuilder {
 
     private final ChangelogConfiguration config;
+    private IChangelogChecksumGenerator checksumGenerator;
+    private IChangelogExecutor executor;
+    private IChangelogLock lock;
+    private IChangelogResourceResolver resourceResolver;
+    private IChangelogTracker tracker;
 
     /**
      * Constructor for ChangelogRunnerBuilder
@@ -114,6 +122,102 @@ public final class ChangelogRunnerBuilder {
     }
 
     /**
+     * Set the snapshot policy for rollback support.
+     *
+     * @param snapshotPolicy the snapshot policy
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder snapshotPolicy(ChangelogSnapshotPolicy snapshotPolicy) {
+        config.setSnapshotPolicy(snapshotPolicy);
+        return this;
+    }
+
+
+    /**
+     * Set the rollback policy for missing rollback definitions.
+     *
+     * @param rollbackPolicy the rollback policy
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder rollbackPolicy(ChangelogRollbackPolicy rollbackPolicy) {
+        config.setRollbackPolicy(rollbackPolicy);
+        return this;
+    }
+
+
+    /**
+     * Set the object quoting strategy for SQL generation.
+     *
+     * @param objectQuotingStrategy the quoting strategy
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder objectQuotingStrategy(ChangelogObjectQuotingStrategy objectQuotingStrategy) {
+        config.setObjectQuotingStrategy(objectQuotingStrategy);
+        return this;
+    }
+
+
+    /**
+     * Set a custom resource resolver for loading changelog files.
+     *
+     * @param resourceResolver the resource resolver
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder resourceResolver(IChangelogResourceResolver resourceResolver) {
+        this.resourceResolver = resourceResolver;
+        return this;
+    }
+
+
+    /**
+     * Set a custom tracker for managing the tracking table.
+     *
+     * @param tracker the tracker
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder tracker(IChangelogTracker tracker) {
+        this.tracker = tracker;
+        return this;
+    }
+
+
+    /**
+     * Set a custom checksum generator.
+     *
+     * @param checksumGenerator the checksum generator
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder checksumGenerator(IChangelogChecksumGenerator checksumGenerator) {
+        this.checksumGenerator = checksumGenerator;
+        return this;
+    }
+
+
+    /**
+     * Set a custom executor for update and rollback operations.
+     *
+     * @param executor the executor
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder executor(IChangelogExecutor executor) {
+        this.executor = executor;
+        return this;
+    }
+
+
+    /**
+     * Set a custom lock implementation.
+     *
+     * @param lock the lock
+     * @return this builder
+     */
+    public ChangelogRunnerBuilder lock(IChangelogLock lock) {
+        this.lock = lock;
+        return this;
+    }
+
+
+    /**
      * Build the IChangelogRunner instance.
      *
      * @return the configured changelog runner
@@ -121,6 +225,6 @@ public final class ChangelogRunnerBuilder {
      */
     public IChangelogRunner build() throws IllegalArgumentException {
         config.validate();
-        return new ChangelogRunnerImpl(config);
+        return new ChangelogRunnerImpl(config, resourceResolver, tracker, checksumGenerator, executor, lock);
     }
 }

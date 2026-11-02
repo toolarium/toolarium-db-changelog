@@ -3,7 +3,7 @@
  *
  * Copyright by toolarium, all rights reserved.
  */
-package com.github.toolarium.db.changelog.impl.lock;
+package com.github.toolarium.db.changelog;
 
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 

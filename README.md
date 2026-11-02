@@ -1,6 +1,6 @@
 [![License](https://img.shields.io/github/license/toolarium/toolarium-db-changelog)](https://github.com/toolarium/toolarium-db-changelog/blob/master/LICENSE)
 [
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.toolarium/toolarium-db-changelog/0.0.1)](https://search.maven.org/artifact/com.github.toolarium/toolarium-db-changelog/0.0.1/jar)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.toolarium/toolarium-db-changelog/0.8.0)](https://search.maven.org/artifact/com.github.toolarium/toolarium-db-changelog/0.8.0/jar)
 [![javadoc](https://javadoc.io/badge2/com.github.toolarium/toolarium-db-changelog/javadoc.svg)](https://javadoc.io/doc/com.github.toolarium/toolarium-db-changelog)
 
 # toolarium-db-changelog
@@ -16,23 +16,28 @@ A Java library for automated database schema migrations and rollbacks. It provid
 - **Sequences and views**: createSequence, dropSequence, createView, dropView
 - **Preconditions**: dbms, tableExists, columnExists, sqlCheck, and/or/not combinators with HALT/WARN/CONTINUE/MARK_RAN
 - **Own changelog format**: clean `.db.yaml`, `.db.xml`, and `.db.json` with property substitution
-- **External format import**: parse and migrate from external changelog formats (XML, YAML, JSON, SQL)
-- **Distributed locking**: via `toolarium-leader-election` (self-healing, no stale locks)
+- **External format import**: parse external changelog formats (XML, YAML, JSON, SQL) for migration compatibility
+- **Pre-execution snapshots**: `DB_CHANGELOG_SNAPSHOT` table for capturing table metadata before changes
+- **Distributed locking**: via [toolarium-leader-election](https://github.com/toolarium/toolarium-leader-election) (self-healing, no stale locks)
 - **SHA-256 checksums**: stable algorithm, no version prefix
-- **DML change types**: insert, update, delete, tagDatabase
+- **DML change types**: insert, update, delete, tagDatabase, setTableRemarks, setColumnRemarks, loadData, loadUpdateData
+- **Custom changes**: user-provided migration logic via `ICustomChangelogEntry`
 - **Context and label filtering**: conditional changeset execution based on active contexts and labels
 - **Sync operation**: mark all pending changesets as executed without running (baselining)
 - **Rollback automation**: auto-rollback for DDL, Level 1 SQL rollback generator for raw SQL, dry-run via `generateRollbackSql()`
 - **Resilient rollback**: continues on partial failure, reports all errors
-- **Security hardened**: SQL identifier validation, XXE protection, safe YAML deserialization, path traversal prevention, statement timeouts
-- **All major databases**: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, H2, DB2, and more
+- **Configurable policies**: snapshot policy, rollback policy, object quoting strategy
+- **Pluggable resource resolver**: unified resolution across classpath, JARs, and file system via `IChangelogResourceResolver`
+- **Security hardened**: SQL identifier validation, XXE protection, safe YAML deserialization, statement timeouts
+- **15 tested databases**: H2, HSQLDB, Derby, SQLite (embedded), PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, CockroachDB, DB2, Firebird, EnterpriseDB, TiDB, YugabyteDB
+- **Additional databases**: any JDBC-compliant database via generic ANSI SQL (not tested: Snowflake, SAP HANA, Sybase, Informix)
 
 
 ## Adding the library
 
 **Gradle**
 ```gradle
-implementation 'com.github.toolarium:toolarium-db-changelog:0.0.1'
+implementation 'com.github.toolarium:toolarium-db-changelog:0.8.0'
 ```
 
 **Maven**
@@ -40,7 +45,7 @@ implementation 'com.github.toolarium:toolarium-db-changelog:0.0.1'
 <dependency>
     <groupId>com.github.toolarium</groupId>
     <artifactId>toolarium-db-changelog</artifactId>
-    <version>0.0.1</version>
+    <version>0.8.0</version>
 </dependency>
 ```
 
@@ -159,7 +164,83 @@ runner.tag("v1.0");                      // tag current state
 runner.sync();                           // mark all pending as executed (baselining)
 runner.status();                         // list pending and applied changesets
 runner.history();                        // list applied changesets
+runner.validate();                       // check for checksum mismatches
 runner.clearChecksums();                 // reset checksums
+```
+
+
+## Changeset attributes
+
+Each changeset supports the following attributes:
+
+| Attribute | Default | Description |
+|---|---|---|
+| `id` | (required) | Unique identifier for the changeset |
+| `author` | OS username | Author of the changeset |
+| `filePath` | resource location | Overrides the resource location in the changeset identity (see below) |
+| `comment` | null | Descriptive comment |
+| `runAlways` | false | Re-execute on every run |
+| `runOnChange` | false | Re-execute when checksum changes |
+| `failOnError` | true | Halt on execution error |
+| `runInTransaction` | true | Wrap in a database transaction |
+| `context` | (none) | Context filter (comma-separated in XML, list in YAML/JSON) |
+| `labels` | (none) | Label filter |
+
+### filePath override
+
+A changeset is identified by the triple `(id, author, filePath)`. By default, `filePath` is the resource location where the changeset was loaded from (classpath or file system path). All paths are normalized automatically.
+
+If you reorganize your changelog files after changesets have been applied in production, the resource location changes and the runner would treat them as new changesets. The `filePath` attribute overrides the resource location in the identity to keep it stable.
+
+**YAML:**
+```yaml
+changesets:
+  - id: create-users
+    filePath: db/changelogs/001-initial.db.yaml
+    changes:
+      - createTable:
+          tableName: users
+          columns:
+            - name: id
+              type: INT
+```
+
+**XML:**
+```xml
+<changeset id="create-users" filePath="db/changelogs/001-initial.db.xml">
+    <changes>
+        <sql>CREATE TABLE users (id INT PRIMARY KEY)</sql>
+    </changes>
+</changeset>
+```
+
+**JSON:**
+```json
+{
+  "id": "create-users",
+  "filePath": "db/changelogs/001-initial.db.json",
+  "changes": [{"sql": "CREATE TABLE users (id INT PRIMARY KEY)"}]
+}
+```
+
+
+## Resource resolution
+
+Changelog files are resolved via `IChangelogResourceResolver` in this order:
+
+1. Classpath scanning via [toolarium-common](https://github.com/toolarium/toolarium-common) ClassPathUtil (finds resources in JARs, classpath directories)
+2. Thread context classloader and class classloader
+3. File system (unless `classpath:` prefix is used)
+
+All paths are normalized automatically. The `classpath:` prefix restricts resolution to classpath only.
+
+```java
+// Custom resource resolver
+IChangelogRunner runner = ChangelogRunnerBuilder.builder()
+    .dataSource(dataSource)
+    .changelog("db/changelog.db.yaml")
+    .resourceResolver(customResolver)
+    .build();
 ```
 
 

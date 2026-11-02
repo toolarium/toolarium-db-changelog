@@ -5,6 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.tracking;
 
+import com.github.toolarium.db.changelog.IChangelogTracker;
 import com.github.toolarium.db.changelog.impl.tracking.impl.ChangelogTrackerImpl;
 
 
