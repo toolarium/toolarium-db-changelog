@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.config;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -94,6 +93,68 @@ public class ChangelogConfigurationTest {
         ChangelogConfiguration config = new ChangelogConfiguration();
         assertNotNull(config.toString());
         assertTrue(config.toString().contains("DB_CHANGELOG"));
+    }
+
+
+    /**
+     * Test identifier validation accepts valid names.
+     */
+    @Test
+    void testValidIdentifiers() {
+        ChangelogConfiguration.validateIdentifier("DB_CHANGELOG", "test");
+        ChangelogConfiguration.validateIdentifier("my_table", "test");
+        ChangelogConfiguration.validateIdentifier("_private", "test");
+        ChangelogConfiguration.validateIdentifier("Table123", "test");
+    }
+
+
+    /**
+     * Test identifier validation rejects invalid names.
+     */
+    @Test
+    void testInvalidIdentifiers() {
+        assertThrows(IllegalArgumentException.class,
+                () -> ChangelogConfiguration.validateIdentifier(null, "test"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ChangelogConfiguration.validateIdentifier("", "test"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ChangelogConfiguration.validateIdentifier("123table", "test"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ChangelogConfiguration.validateIdentifier("my table", "test"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ChangelogConfiguration.validateIdentifier("drop;--", "test"));
+        assertThrows(IllegalArgumentException.class,
+                () -> ChangelogConfiguration.validateIdentifier("table.name", "test"));
+    }
+
+
+    /**
+     * Test validation rejects invalid table names.
+     */
+    @Test
+    void testValidationRejectsInvalidTableName() {
+        JdbcDataSource ds = new JdbcDataSource();
+        ds.setURL("jdbc:h2:mem:test");
+
+        ChangelogConfiguration config = new ChangelogConfiguration();
+        config.setDataSource(ds);
+        config.setTrackingTableName("invalid;name");
+        assertThrows(IllegalArgumentException.class, () -> config.validate());
+    }
+
+
+    /**
+     * Test IDENTIFIER_PATTERN matches expected inputs.
+     */
+    @Test
+    void testIdentifierPattern() {
+        assertTrue(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("DB_CHANGELOG").matches());
+        assertTrue(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("_test").matches());
+        assertTrue(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("a").matches());
+        assertFalse(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("1abc").matches());
+        assertFalse(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("").matches());
+        assertFalse(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("a b").matches());
+        assertFalse(ChangelogConfiguration.IDENTIFIER_PATTERN.matcher("a;b").matches());
     }
 
 

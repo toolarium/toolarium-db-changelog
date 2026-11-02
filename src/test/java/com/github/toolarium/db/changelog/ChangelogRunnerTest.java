@@ -5,19 +5,18 @@
  */
 package com.github.toolarium.db.changelog;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.ChangelogExecutionType;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -27,6 +26,7 @@ import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests for the core changelog runner with H2.

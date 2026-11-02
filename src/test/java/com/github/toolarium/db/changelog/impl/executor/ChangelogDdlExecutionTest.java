@@ -5,22 +5,21 @@
  */
 package com.github.toolarium.db.changelog.impl.executor;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.ChangelogRunnerBuilder;
 import com.github.toolarium.db.changelog.IChangelogRunner;
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.column.AddColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.ChangelogColumnDefinition;
-import com.github.toolarium.db.changelog.dto.index.CreateIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
+import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.ChangelogColumnDefinition;
+import com.github.toolarium.db.changelog.model.index.CreateIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;

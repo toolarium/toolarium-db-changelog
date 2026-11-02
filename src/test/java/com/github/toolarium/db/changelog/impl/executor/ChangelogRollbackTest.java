@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.executor;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,13 +12,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.ChangelogRunnerBuilder;
 import com.github.toolarium.db.changelog.IChangelogRunner;
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -226,12 +225,12 @@ public class ChangelogRollbackTest {
      */
     @Test
     void testRollbackStructuredDdlAutoRollback() throws Exception {
-        com.github.toolarium.db.changelog.dto.column.ChangelogColumnDefinition col =
-                new com.github.toolarium.db.changelog.dto.column.ChangelogColumnDefinition("id", "INT");
+        com.github.toolarium.db.changelog.model.column.ChangelogColumnDefinition col =
+                new com.github.toolarium.db.changelog.model.column.ChangelogColumnDefinition("id", "INT");
         col.setPrimaryKey(true).setNullable(false);
 
-        com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry createTable =
-                new com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry("auto_ddl_rb",
+        com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry createTable =
+                new com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry("auto_ddl_rb",
                         Collections.singletonList(col));
 
         ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity("ddl-auto", AUTHOR, FILEPATH);
@@ -293,6 +292,6 @@ public class ChangelogRollbackTest {
         List<IChangelogEntry> entries = Collections.singletonList(new SqlChangelogEntry(sql));
         List<IChangelogEntry> rollback = Collections.singletonList(new SqlChangelogEntry(rollbackSql));
         return new ChangelogChangeSet(identity, entries, rollback, null,
-                false, false, true, true, Collections.emptyList(), Collections.emptyList());
+                false, false, true, true, Collections.emptyList(), Collections.emptyList(), null);
     }
 }

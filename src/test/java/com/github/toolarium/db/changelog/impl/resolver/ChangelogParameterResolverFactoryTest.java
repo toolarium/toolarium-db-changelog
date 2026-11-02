@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.resolver;
 
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 

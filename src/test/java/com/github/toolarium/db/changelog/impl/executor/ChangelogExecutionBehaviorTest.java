@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.executor;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -13,21 +12,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.github.toolarium.db.changelog.ChangelogRunnerBuilder;
 import com.github.toolarium.db.changelog.IChangelogRunner;
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.ChangelogExecutionType;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests for execution behavior: runAlways, runOnChange, failOnError, checksum, error handling.
@@ -63,7 +63,7 @@ public class ChangelogExecutionBehaviorTest {
         List<IChangelogEntry> entries = Collections.singletonList(
                 new SqlChangelogEntry("CREATE TABLE IF NOT EXISTS ra_test (id INT)"));
         ChangelogChangeSet cs = new ChangelogChangeSet(id, entries, Collections.emptyList(), null,
-                true, false, true, true, Collections.emptyList(), Collections.emptyList());
+                true, false, true, true, Collections.emptyList(), Collections.emptyList(), null);
 
         IChangelogRunner runner = createRunner(cs);
         runner.update();
@@ -88,7 +88,7 @@ public class ChangelogExecutionBehaviorTest {
         List<IChangelogEntry> entries1 = Collections.singletonList(
                 new SqlChangelogEntry("CREATE TABLE IF NOT EXISTS roc_test (id INT)"));
         ChangelogChangeSet cs1 = new ChangelogChangeSet(id, entries1, Collections.emptyList(), null,
-                false, true, true, true, Collections.emptyList(), Collections.emptyList());
+                false, true, true, true, Collections.emptyList(), Collections.emptyList(), null);
         IChangelogRunner runner1 = createRunner(cs1);
         runner1.update();
 
@@ -98,7 +98,7 @@ public class ChangelogExecutionBehaviorTest {
         List<IChangelogEntry> entries2 = Collections.singletonList(
                 new SqlChangelogEntry("CREATE TABLE IF NOT EXISTS roc_test (id INT, name VARCHAR(50))"));
         ChangelogChangeSet cs2 = new ChangelogChangeSet(id, entries2, Collections.emptyList(), null,
-                false, true, true, true, Collections.emptyList(), Collections.emptyList());
+                false, true, true, true, Collections.emptyList(), Collections.emptyList(), null);
         ChangelogRunnerImpl runner2 = (ChangelogRunnerImpl) ChangelogRunnerBuilder.builder()
                 .dataSource(dataSource).build();
         runner2.setChangelog(new Changelog(FILEPATH, Collections.singletonList(cs2)));
@@ -122,7 +122,7 @@ public class ChangelogExecutionBehaviorTest {
         List<IChangelogEntry> entries1 = Collections.singletonList(
                 new SqlChangelogEntry("INVALID SQL STATEMENT"));
         ChangelogChangeSet cs1 = new ChangelogChangeSet(id1, entries1, Collections.emptyList(), null,
-                false, false, false, true, Collections.emptyList(), Collections.emptyList());
+                false, false, false, true, Collections.emptyList(), Collections.emptyList(), null);
 
         ChangelogChangeSetIdentity id2 = new ChangelogChangeSetIdentity("will-succeed", AUTHOR, FILEPATH);
         List<IChangelogEntry> entries2 = Collections.singletonList(

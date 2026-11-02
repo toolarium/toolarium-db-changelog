@@ -5,12 +5,12 @@
  */
 package com.github.toolarium.db.changelog;
 
-
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSetStatus;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSetStatus;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
 import java.time.Instant;
 import java.util.List;
+
 
 /**
  * Main entry point for database changelog operations.

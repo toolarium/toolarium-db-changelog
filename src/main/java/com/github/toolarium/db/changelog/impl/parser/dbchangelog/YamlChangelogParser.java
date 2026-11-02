@@ -5,19 +5,25 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
-
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelog;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
+import com.github.toolarium.db.changelog.impl.parser.util.ChangelogParserUtil;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelog;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.precondition.ChangelogPreconditionContainer;
+import com.github.toolarium.common.util.EnumUtil;
+import com.github.toolarium.db.changelog.model.precondition.ChangelogPreconditionFailureAction;
+import com.github.toolarium.db.changelog.model.precondition.DbmsPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.IChangelogPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.TableExistsPrecondition;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -27,7 +33,10 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+
 
 /**
  * Parses the native DB-Changelog YAML format (.db.yaml).
@@ -44,10 +53,9 @@ public class YamlChangelogParser implements IChangelogParser {
      * @see com.github.toolarium.db.changelog.impl.parser.IChangelogParser#parse(InputStream, String, IChangelogParameterResolver)
      */
     @Override
-    @SuppressWarnings("unchecked")
     public IChangelog parse(InputStream input, String physicalPath, IChangelogParameterResolver parameterResolver) throws ChangelogParseException {
         try {
-            Yaml yaml = new Yaml();
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             Map<String, Object> root = yaml.load(input);
 
             if (root == null) {
@@ -60,7 +68,7 @@ public class YamlChangelogParser implements IChangelogParser {
             List<IChangelogChangeSet> changeSets = new ArrayList<>();
 
             // Process includes
-            List<Map<String, Object>> includeList = (List<Map<String, Object>>) root.get("include");
+            List<Map<String, Object>> includeList = ChangelogParserUtil.getInstance().listOf(root.get("include"));
             if (includeList != null) {
                 for (Map<String, Object> includeMap : includeList) {
                     String includePath = (String) includeMap.get("path");
@@ -70,7 +78,7 @@ public class YamlChangelogParser implements IChangelogParser {
                 }
             }
 
-            List<Map<String, Object>> changesetList = (List<Map<String, Object>>) root.get("changesets");
+            List<Map<String, Object>> changesetList = ChangelogParserUtil.getInstance().listOf(root.get("changesets"));
             if (changesetList != null) {
                 for (Map<String, Object> changesetMap : changesetList) {
                     changeSets.add(parseChangeSet(changesetMap, physicalPath, parameterResolver));
@@ -194,9 +202,8 @@ public class YamlChangelogParser implements IChangelogParser {
      * @param root the root map
      * @param parameterResolver the parameter resolver
      */
-    @SuppressWarnings("unchecked")
     private void loadProperties(Map<String, Object> root, IChangelogParameterResolver parameterResolver) {
-        Map<String, Object> properties = (Map<String, Object>) root.get("properties");
+        Map<String, Object> properties = ChangelogParserUtil.getInstance().mapOf(root.get("properties"));
         if (properties != null) {
             for (Map.Entry<String, Object> entry : properties.entrySet()) {
                 if (entry.getValue() != null) {
@@ -216,7 +223,6 @@ public class YamlChangelogParser implements IChangelogParser {
      * @return the parsed changeset
      * @throws ChangelogParseException if parsing fails
      */
-    @SuppressWarnings("unchecked")
     private IChangelogChangeSet parseChangeSet(Map<String, Object> changesetMap, String physicalPath,
                                                IChangelogParameterResolver parameterResolver) throws ChangelogParseException {
         String id = getRequiredString(changesetMap, "id", physicalPath);
@@ -230,6 +236,7 @@ public class YamlChangelogParser implements IChangelogParser {
 
         List<String> contexts = getStringList(changesetMap, "context");
         List<String> labels = getStringList(changesetMap, "labels");
+        ChangelogPreconditionContainer preconditions = parsePreconditions(changesetMap);
 
         ChangelogChangeSetIdentity identity = new ChangelogChangeSetIdentity(id, author, physicalPath);
 
@@ -241,7 +248,51 @@ public class YamlChangelogParser implements IChangelogParser {
         }
 
         return new ChangelogChangeSet(identity, entries, rollbackEntries, comment,
-                runAlways, runOnChange, failOnError, runInTransaction, contexts, labels);
+                runAlways, runOnChange, failOnError, runInTransaction, contexts, labels, preconditions);
+    }
+
+
+    /**
+     * Parse preconditions from a changeset map.
+     *
+     * @param changesetMap the changeset map
+     * @return the precondition container, or null if no preconditions
+     */
+    private ChangelogPreconditionContainer parsePreconditions(Map<String, Object> changesetMap) {
+        Map<String, Object> precondMap = ChangelogParserUtil.getInstance().mapOf(changesetMap.get("preconditions"));
+        if (precondMap == null) {
+            return null;
+        }
+
+        String onFailStr = getString(precondMap, "onFail", "HALT");
+        String onErrorStr = getString(precondMap, "onError", "HALT");
+        ChangelogPreconditionFailureAction onFail = EnumUtil.getInstance().valueOf(ChangelogPreconditionFailureAction.class, onFailStr);
+        if (onFail == null) {
+            onFail = ChangelogPreconditionFailureAction.HALT;
+        }
+        ChangelogPreconditionFailureAction onError = EnumUtil.getInstance().valueOf(ChangelogPreconditionFailureAction.class, onErrorStr);
+        if (onError == null) {
+            onError = ChangelogPreconditionFailureAction.HALT;
+        }
+
+        List<IChangelogPrecondition> checks = new ArrayList<>();
+        List<Map<String, Object>> checkList = ChangelogParserUtil.getInstance().listOf(precondMap.get("checks"));
+        if (checkList != null) {
+            for (Map<String, Object> checkMap : checkList) {
+                if (checkMap.containsKey("dbms")) {
+                    checks.add(new DbmsPrecondition(checkMap.get("dbms").toString()));
+                }
+                if (checkMap.containsKey("tableExists")) {
+                    checks.add(new TableExistsPrecondition(checkMap.get("tableExists").toString()));
+                }
+            }
+        }
+
+        if (checks.isEmpty()) {
+            return null;
+        }
+
+        return new ChangelogPreconditionContainer(onFail, onError, checks);
     }
 
 
@@ -255,11 +306,10 @@ public class YamlChangelogParser implements IChangelogParser {
      * @return the list of entries
      * @throws ChangelogParseException if parsing fails
      */
-    @SuppressWarnings("unchecked")
     private List<IChangelogEntry> parseEntries(Map<String, Object> changesetMap, String key,
                                                IChangelogParameterResolver parameterResolver,
                                                String physicalPath) throws ChangelogParseException {
-        List<Object> changeList = (List<Object>) changesetMap.get(key);
+        List<Object> changeList = ChangelogParserUtil.getInstance().listOf(changesetMap.get(key));
         if (changeList == null) {
             return Collections.emptyList();
         }
@@ -267,7 +317,7 @@ public class YamlChangelogParser implements IChangelogParser {
         List<IChangelogEntry> entries = new ArrayList<>();
         for (Object changeObj : changeList) {
             if (changeObj instanceof Map) {
-                entries.add(parseEntry((Map<String, Object>) changeObj, parameterResolver, physicalPath));
+                entries.add(parseEntry(ChangelogParserUtil.getInstance().mapOf(changeObj), parameterResolver, physicalPath));
             } else if (changeObj instanceof String) {
                 entries.add(new SqlChangelogEntry(parameterResolver.resolve((String) changeObj)));
             }
@@ -354,7 +404,6 @@ public class YamlChangelogParser implements IChangelogParser {
      * @param key the key
      * @return the string list, or empty list if not present
      */
-    @SuppressWarnings("unchecked")
     private List<String> getStringList(Map<String, Object> map, String key) {
         Object value = map.get(key);
         if (value == null) {
@@ -362,7 +411,8 @@ public class YamlChangelogParser implements IChangelogParser {
         }
         if (value instanceof List) {
             List<String> result = new ArrayList<>();
-            for (Object item : (List<Object>) value) {
+            List<Object> items = ChangelogParserUtil.getInstance().listOf(value);
+            for (Object item : items) {
                 result.add(item.toString());
             }
             return result;

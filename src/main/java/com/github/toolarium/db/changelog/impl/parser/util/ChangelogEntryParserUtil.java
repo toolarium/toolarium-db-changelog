@@ -5,32 +5,32 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.util;
 
-
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.AddColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.ChangelogColumnDefinition;
-import com.github.toolarium.db.changelog.dto.column.DropColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.IChangelogColumnDefinition;
-import com.github.toolarium.db.changelog.dto.column.ModifyColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.RenameColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.constraint.AddNotNullConstraintChangelogEntry;
-import com.github.toolarium.db.changelog.dto.constraint.DropNotNullConstraintChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.CreateIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.DropIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sequence.CreateSequenceChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sequence.DropSequenceChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.DropTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.RenameTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.view.CreateViewChangelogEntry;
-import com.github.toolarium.db.changelog.dto.view.DropViewChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.ChangelogColumnDefinition;
+import com.github.toolarium.db.changelog.model.column.DropColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.IChangelogColumnDefinition;
+import com.github.toolarium.db.changelog.model.column.ModifyColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.RenameColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.constraint.AddNotNullConstraintChangelogEntry;
+import com.github.toolarium.db.changelog.model.constraint.DropNotNullConstraintChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.CreateIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.DropIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.sequence.CreateSequenceChangelogEntry;
+import com.github.toolarium.db.changelog.model.sequence.DropSequenceChangelogEntry;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.DropTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.RenameTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.view.CreateViewChangelogEntry;
+import com.github.toolarium.db.changelog.model.view.DropViewChangelogEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
 
 /**
  * Singleton utility for parsing changelog entries from map structures (used by YAML, XML, JSON parsers).
@@ -78,47 +78,45 @@ public final class ChangelogEntryParserUtil {
      * @return the parsed entry
      * @throws ChangelogParseException if the entry type is unknown
      */
-    @SuppressWarnings("unchecked")
-    public IChangelogEntry parseEntry(Map<String, Object> entryMap, IChangelogParameterResolver parameterResolver,
-                                      String physicalPath) throws ChangelogParseException {
+    public IChangelogEntry parseEntry(Map<String, Object> entryMap, IChangelogParameterResolver parameterResolver, String physicalPath) throws ChangelogParseException {
         if (entryMap.containsKey("sql")) {
             return new SqlChangelogEntry(parameterResolver.resolve(entryMap.get("sql").toString()));
         }
 
         if (entryMap.containsKey("createTable")) {
-            return parseCreateTable((Map<String, Object>) entryMap.get("createTable"), parameterResolver);
+            return parseCreateTable(requireMap(entryMap, "createTable", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("dropTable")) {
-            return parseDropTable((Map<String, Object>) entryMap.get("dropTable"), parameterResolver);
+            return parseDropTable(requireMap(entryMap, "dropTable", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("addColumn")) {
-            return parseAddColumn((Map<String, Object>) entryMap.get("addColumn"), parameterResolver);
+            return parseAddColumn(requireMap(entryMap, "addColumn", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("dropColumn")) {
-            return parseDropColumn((Map<String, Object>) entryMap.get("dropColumn"), parameterResolver);
+            return parseDropColumn(requireMap(entryMap, "dropColumn", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("createIndex")) {
-            return parseCreateIndex((Map<String, Object>) entryMap.get("createIndex"), parameterResolver);
+            return parseCreateIndex(requireMap(entryMap, "createIndex", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("dropIndex")) {
-            return parseDropIndex((Map<String, Object>) entryMap.get("dropIndex"), parameterResolver);
+            return parseDropIndex(requireMap(entryMap, "dropIndex", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("renameTable")) {
-            return parseRenameTable((Map<String, Object>) entryMap.get("renameTable"), parameterResolver);
+            return parseRenameTable(requireMap(entryMap, "renameTable", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("renameColumn")) {
-            return parseRenameColumn((Map<String, Object>) entryMap.get("renameColumn"), parameterResolver);
+            return parseRenameColumn(requireMap(entryMap, "renameColumn", physicalPath), parameterResolver);
         }
 
         if (entryMap.containsKey("modifyColumn")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("modifyColumn");
+            Map<String, Object> m = requireMap(entryMap, "modifyColumn", physicalPath);
             return new ModifyColumnChangelogEntry(
                     parameterResolver.resolve((String) m.get(KEY_TABLE_NAME)),
                     parameterResolver.resolve((String) m.get("columnName")),
@@ -126,40 +124,40 @@ public final class ChangelogEntryParserUtil {
         }
 
         if (entryMap.containsKey("addNotNullConstraint")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("addNotNullConstraint");
+            Map<String, Object> m = requireMap(entryMap, "addNotNullConstraint", physicalPath);
             return new AddNotNullConstraintChangelogEntry(
                     parameterResolver.resolve((String) m.get(KEY_TABLE_NAME)),
                     parameterResolver.resolve((String) m.get("columnName")));
         }
 
         if (entryMap.containsKey("dropNotNullConstraint")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("dropNotNullConstraint");
+            Map<String, Object> m = requireMap(entryMap, "dropNotNullConstraint", physicalPath);
             return new DropNotNullConstraintChangelogEntry(
                     parameterResolver.resolve((String) m.get(KEY_TABLE_NAME)),
                     parameterResolver.resolve((String) m.get("columnName")));
         }
 
         if (entryMap.containsKey("createSequence")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("createSequence");
+            Map<String, Object> m = requireMap(entryMap, "createSequence", physicalPath);
             return new CreateSequenceChangelogEntry(
                     parameterResolver.resolve((String) m.get("sequenceName")));
         }
 
         if (entryMap.containsKey("dropSequence")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("dropSequence");
+            Map<String, Object> m = requireMap(entryMap, "dropSequence", physicalPath);
             return new DropSequenceChangelogEntry(
                     parameterResolver.resolve((String) m.get("sequenceName")));
         }
 
         if (entryMap.containsKey("createView")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("createView");
+            Map<String, Object> m = requireMap(entryMap, "createView", physicalPath);
             return new CreateViewChangelogEntry(
                     parameterResolver.resolve((String) m.get("viewName")),
                     parameterResolver.resolve((String) m.get("selectQuery")));
         }
 
         if (entryMap.containsKey("dropView")) {
-            Map<String, Object> m = (Map<String, Object>) entryMap.get("dropView");
+            Map<String, Object> m = requireMap(entryMap, "dropView", physicalPath);
             return new DropViewChangelogEntry(
                     parameterResolver.resolve((String) m.get("viewName")));
         }
@@ -181,10 +179,9 @@ public final class ChangelogEntryParserUtil {
      * @param resolver the parameter resolver
      * @return the entry
      */
-    @SuppressWarnings("unchecked")
     private IChangelogEntry parseCreateTable(Map<String, Object> map, IChangelogParameterResolver resolver) {
         String tableName = resolver.resolve((String) map.get(KEY_TABLE_NAME));
-        List<Map<String, Object>> columnMaps = (List<Map<String, Object>>) map.get("columns");
+        List<Map<String, Object>> columnMaps = ChangelogParserUtil.getInstance().listOf(map.get("columns"));
         List<IChangelogColumnDefinition> columns = parseColumns(columnMaps, resolver);
         return new CreateTableChangelogEntry(tableName, columns);
     }
@@ -210,10 +207,9 @@ public final class ChangelogEntryParserUtil {
      * @param resolver the parameter resolver
      * @return the entry
      */
-    @SuppressWarnings("unchecked")
     private IChangelogEntry parseAddColumn(Map<String, Object> map, IChangelogParameterResolver resolver) {
         String tableName = resolver.resolve((String) map.get(KEY_TABLE_NAME));
-        List<Map<String, Object>> columnMaps = (List<Map<String, Object>>) map.get("columns");
+        List<Map<String, Object>> columnMaps = ChangelogParserUtil.getInstance().listOf(map.get("columns"));
         List<IChangelogColumnDefinition> columns = parseColumns(columnMaps, resolver);
         return new AddColumnChangelogEntry(tableName, columns);
     }
@@ -226,13 +222,12 @@ public final class ChangelogEntryParserUtil {
      * @param resolver the parameter resolver
      * @return the entry
      */
-    @SuppressWarnings("unchecked")
     private IChangelogEntry parseDropColumn(Map<String, Object> map, IChangelogParameterResolver resolver) {
         String tableName = resolver.resolve((String) map.get(KEY_TABLE_NAME));
         Object columnsObj = map.get("columns");
         List<String> columnNames = new ArrayList<>();
         if (columnsObj instanceof List) {
-            for (Object col : (List<Object>) columnsObj) {
+            for (Object col : ChangelogParserUtil.getInstance().listOf(columnsObj)) {
                 columnNames.add(resolver.resolve(col.toString()));
             }
         } else if (columnsObj instanceof String) {
@@ -249,7 +244,6 @@ public final class ChangelogEntryParserUtil {
      * @param resolver the parameter resolver
      * @return the entry
      */
-    @SuppressWarnings("unchecked")
     private IChangelogEntry parseCreateIndex(Map<String, Object> map, IChangelogParameterResolver resolver) {
         String tableName = resolver.resolve((String) map.get(KEY_TABLE_NAME));
         String indexName = resolver.resolve((String) map.get("indexName"));
@@ -257,7 +251,7 @@ public final class ChangelogEntryParserUtil {
         List<String> columnNames = new ArrayList<>();
         Object columnsObj = map.get("columns");
         if (columnsObj instanceof List) {
-            for (Object col : (List<Object>) columnsObj) {
+            for (Object col : ChangelogParserUtil.getInstance().listOf(columnsObj)) {
                 columnNames.add(resolver.resolve(col.toString()));
             }
         }
@@ -315,7 +309,6 @@ public final class ChangelogEntryParserUtil {
      * @param resolver the parameter resolver
      * @return the column definitions
      */
-    @SuppressWarnings("unchecked")
     private List<IChangelogColumnDefinition> parseColumns(List<Map<String, Object>> columnMaps,
                                                           IChangelogParameterResolver resolver) {
         if (columnMaps == null) {
@@ -332,7 +325,7 @@ public final class ChangelogEntryParserUtil {
                 col.setAutoIncrement(true);
             }
 
-            Map<String, Object> constraints = (Map<String, Object>) colMap.get("constraints");
+            Map<String, Object> constraints = ChangelogParserUtil.getInstance().mapOf(colMap.get("constraints"));
             if (constraints != null) {
                 if (Boolean.parseBoolean(String.valueOf(constraints.getOrDefault("primaryKey", "false")))) {
                     col.setPrimaryKey(true);
@@ -355,5 +348,25 @@ public final class ChangelogEntryParserUtil {
             columns.add(col);
         }
         return columns;
+    }
+
+
+    /**
+     * Get a value from a map and verify it is a Map instance.
+     *
+     * @param entryMap the parent map
+     * @param key the key to look up
+     * @param physicalPath the file path for error messages
+     * @return the value as a Map
+     * @throws ChangelogParseException if the value is not a Map
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> requireMap(Map<String, Object> entryMap, String key,
+                                           String physicalPath) throws ChangelogParseException {
+        Object value = entryMap.get(key);
+        if (value instanceof Map) {
+            return (Map<String, Object>) value;
+        }
+        throw new ChangelogParseException("Expected map for [" + key + "] in [" + physicalPath + "].");
     }
 }

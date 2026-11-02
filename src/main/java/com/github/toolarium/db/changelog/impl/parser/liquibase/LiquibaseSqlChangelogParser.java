@@ -5,17 +5,16 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.liquibase;
 
-
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelog;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelog;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Parses the external formatted SQL changelog format.
@@ -44,8 +44,7 @@ public class LiquibaseSqlChangelogParser implements IChangelogParser {
      */
     @Override
     public IChangelog parse(InputStream input, String physicalPath, IChangelogParameterResolver parameterResolver) throws ChangelogParseException {
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             List<IChangelogChangeSet> changeSets = new ArrayList<>();
 
             String currentId = null;
@@ -165,6 +164,6 @@ public class LiquibaseSqlChangelogParser implements IChangelogParser {
         }
 
         return new ChangelogChangeSet(identity, entries, rollbackEntries, null,
-                false, false, true, true, Collections.emptyList(), Collections.emptyList());
+                false, false, true, true, Collections.emptyList(), Collections.emptyList(), null);
     }
 }

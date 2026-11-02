@@ -5,18 +5,17 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
-
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelog;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelog;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,11 +23,13 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Parses the native DB-Changelog XML format (.db.xml) using StAX.
@@ -50,11 +51,15 @@ public class XmlChangelogParser implements IChangelogParser {
      */
     @Override
     public IChangelog parse(InputStream input, String physicalPath, IChangelogParameterResolver parameterResolver) throws ChangelogParseException {
+        XMLStreamReader reader = null;
         try {
             XMLInputFactory factory = XMLInputFactory.newInstance();
             factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
             factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-            XMLStreamReader reader = factory.createXMLStreamReader(input);
+            factory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, Boolean.FALSE);
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            reader = factory.createXMLStreamReader(input);
 
             List<IChangelogChangeSet> changeSets = new ArrayList<>();
             boolean formatValidated = false;
@@ -96,6 +101,16 @@ public class XmlChangelogParser implements IChangelogParser {
                 LOG.debug("Failed to parse XML changelog [" + e.getMessage(), e);
             }
             throw new ChangelogParseException("Failed to parse XML changelog [" + physicalPath + "].", e);
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (Exception e) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Failed to close XML stream reader: " + e.getMessage(), e);
+                    }
+                }
+            }
         }
     }
 
@@ -182,7 +197,7 @@ public class XmlChangelogParser implements IChangelogParser {
                 Boolean.parseBoolean(attrs.getOrDefault("runOnChange", "false")),
                 !"false".equals(attrs.getOrDefault("failOnError", "true")),
                 !"false".equals(attrs.getOrDefault("runInTransaction", "true")),
-                parseCommaSeparated(attrs.get("context")), Collections.emptyList());
+                parseCommaSeparated(attrs.get("context")), Collections.emptyList(), null);
     }
 
 
@@ -196,7 +211,6 @@ public class XmlChangelogParser implements IChangelogParser {
      * @return a map like {"createTable": {"tableName": "...", "columns": [...]}}
      * @throws Exception if parsing fails
      */
-    @SuppressWarnings("unchecked")
     private Map<String, Object> parseXmlEntryToMap(String elementName, XMLStreamReader reader,
                                                    IChangelogParameterResolver parameterResolver) throws Exception {
         Map<String, Object> innerMap = new HashMap<>();

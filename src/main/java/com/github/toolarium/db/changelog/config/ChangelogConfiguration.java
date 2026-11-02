@@ -5,9 +5,10 @@
  */
 package com.github.toolarium.db.changelog.config;
 
-
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.sql.DataSource;
+
 
 /**
  * Runtime configuration for the changelog runner.
@@ -15,6 +16,9 @@ import javax.sql.DataSource;
  * @author patrick
  */
 public class ChangelogConfiguration {
+    /** Pattern for valid SQL identifiers (table names, column names). */
+    public static final Pattern IDENTIFIER_PATTERN = Pattern.compile("[A-Za-z_][A-Za-z0-9_]*");
+
     /** Default tracking table name. */
     public static final String DEFAULT_TRACKING_TABLE = "DB_CHANGELOG";
 
@@ -208,6 +212,32 @@ public class ChangelogConfiguration {
     public void validate() throws IllegalArgumentException {
         if (dataSource == null) {
             throw new IllegalArgumentException("DataSource must not be null.");
+        }
+        validateIdentifier(trackingTableName, "trackingTableName");
+        validateIdentifier(lockTableName, "lockTableName");
+    }
+
+
+    /**
+     * Validate that a SQL identifier contains only safe characters.
+     *
+     * @param identifier the identifier to validate
+     * @param name the name for error messages
+     * @throws IllegalArgumentException if the identifier is invalid
+     */
+    /**
+     * Validate that a SQL identifier contains only safe characters.
+     *
+     * @param identifier the identifier to validate
+     * @param name the name for error messages
+     * @throws IllegalArgumentException if the identifier is invalid
+     */
+    public static void validateIdentifier(String identifier, String name) {
+        if (identifier == null || identifier.isEmpty()) {
+            throw new IllegalArgumentException(name + " must not be null or empty.");
+        }
+        if (!IDENTIFIER_PATTERN.matcher(identifier).matches()) {
+            throw new IllegalArgumentException(name + " contains invalid characters: " + identifier);
         }
     }
 

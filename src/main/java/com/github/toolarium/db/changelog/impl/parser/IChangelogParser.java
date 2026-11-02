@@ -5,11 +5,11 @@
  */
 package com.github.toolarium.db.changelog.impl.parser;
 
-
-import com.github.toolarium.db.changelog.dto.IChangelog;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
+import com.github.toolarium.db.changelog.model.IChangelog;
 import java.io.InputStream;
+
 
 /**
  * Parses a changelog from an input stream into the internal model.

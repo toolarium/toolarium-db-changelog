@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.executor;
 
-
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
@@ -30,15 +29,5 @@ public class ChangelogExecutorFactoryTest {
         assertNotNull(ChangelogExecutorFactory.getInstance().getExecutor(
                 ChangelogTrackerFactory.getInstance().getTracker("TEST_TABLE", "0.0.1"),
                 ChangelogChecksumGeneratorFactory.getInstance().getChecksumGenerator()));
-    }
-
-
-    /**
-     * Test rollback executor creation.
-     */
-    @Test
-    void testRollbackExecutorFactory() {
-        assertNotNull(ChangelogExecutorFactory.getInstance().getRollbackExecutor(
-                ChangelogTrackerFactory.getInstance().getTracker("TEST_TABLE", "0.0.1")));
     }
 }

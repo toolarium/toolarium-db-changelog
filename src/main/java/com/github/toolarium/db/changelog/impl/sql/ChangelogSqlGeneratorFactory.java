@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.sql;
 
-
 import com.github.toolarium.db.changelog.impl.sql.impl.GenericChangelogSqlGeneratorImpl;
 
 

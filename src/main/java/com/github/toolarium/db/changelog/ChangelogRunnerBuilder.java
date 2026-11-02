@@ -5,11 +5,11 @@
  */
 package com.github.toolarium.db.changelog;
 
-
 import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
 import java.util.List;
 import javax.sql.DataSource;
+
 
 /**
  * Builder for creating an IChangelogRunner instance.

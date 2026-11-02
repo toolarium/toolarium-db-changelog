@@ -5,19 +5,18 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.toolarium.db.changelog.dto.Changelog;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.ChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelog;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
+import com.github.toolarium.db.changelog.model.Changelog;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelog;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Parses the native DB-Changelog JSON format (.db.json) using Jackson.
@@ -158,7 +158,7 @@ public class JsonChangelogParser implements IChangelogParser {
             throw new ChangelogParseException("Changeset [" + id + "] in [" + physicalPath + "] has no changes.");
         }
 
-        return new ChangelogChangeSet(identity, entries, rollbackEntries, comment, runAlways, runOnChange, failOnError, runInTransaction, contexts, labels);
+        return new ChangelogChangeSet(identity, entries, rollbackEntries, comment, runAlways, runOnChange, failOnError, runInTransaction, contexts, labels, null);
     }
 
 
@@ -182,8 +182,7 @@ public class JsonChangelogParser implements IChangelogParser {
 
         List<IChangelogEntry> entries = new ArrayList<>();
         for (JsonNode entryNode : arrayNode) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> entryMap = objectMapper.convertValue(entryNode, Map.class);
+            Map<String, Object> entryMap = convertNodeToMap(entryNode);
             entries.add(ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, parameterResolver, physicalPath));
         }
 
@@ -263,5 +262,17 @@ public class JsonChangelogParser implements IChangelogParser {
             return result;
         }
         return Collections.singletonList(arrayNode.asText());
+    }
+
+
+    /**
+     * Convert a JSON node to a Map with unchecked suppression in a single place.
+     *
+     * @param node the JSON node
+     * @return the map
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> convertNodeToMap(JsonNode node) {
+        return objectMapper.convertValue(node, Map.class);
     }
 }

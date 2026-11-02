@@ -5,14 +5,14 @@
  */
 package com.github.toolarium.db.changelog.impl.tracking;
 
-
-import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
+import com.github.toolarium.db.changelog.model.ChangelogExecutionType;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
 import java.sql.Connection;
 import java.util.List;
+
 
 /**
  * Manages the DB_CHANGELOG tracking table.

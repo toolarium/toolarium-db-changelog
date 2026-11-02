@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.checksum;
 
-
 import com.github.toolarium.db.changelog.impl.checksum.impl.ChangelogChecksumGeneratorImpl;
 
 

@@ -6,39 +6,45 @@
 package com.github.toolarium.db.changelog.impl.lock.impl;
 
 import com.github.toolarium.db.changelog.impl.lock.IChangelogLock;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 
 /**
  * No-op lock implementation used when leader election is disabled.
- * Provides no concurrency protection; suitable for single-instance deployments.
+ * Provides no distributed concurrency protection; suitable for single-instance deployments only.
  *
  * @author patrick
  */
 public class ChangelogNoOpLockImpl implements IChangelogLock {
-    private volatile boolean locked;
+    private final AtomicBoolean locked = new AtomicBoolean(false);
+
 
     /**
      * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#acquireLock()
      */
     @Override
     public void acquireLock() {
-        locked = true;
+        locked.set(true);
     }
+
 
     /**
      * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#releaseLock()
      */
     @Override
     public void releaseLock() {
-        locked = false;
+        locked.set(false);
     }
+
 
     /**
      * @see com.github.toolarium.db.changelog.impl.lock.IChangelogLock#isLocked()
      */
     @Override
     public boolean isLocked() {
-        return locked;
+        return locked.get();
     }
+
 
     /**
      * @see java.lang.AutoCloseable#close()

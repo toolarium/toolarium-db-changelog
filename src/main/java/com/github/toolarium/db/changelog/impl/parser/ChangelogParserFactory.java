@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.parser;
 
-
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.dbchangelog.JsonChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.dbchangelog.XmlChangelogParser;

@@ -5,29 +5,30 @@
  */
 package com.github.toolarium.db.changelog.impl.sql.impl;
 
-
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.AddColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.DropColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.IChangelogColumnDefinition;
-import com.github.toolarium.db.changelog.dto.column.ModifyColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.RenameColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.constraint.AddNotNullConstraintChangelogEntry;
-import com.github.toolarium.db.changelog.dto.constraint.DropNotNullConstraintChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.CreateIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.DropIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sequence.CreateSequenceChangelogEntry;
-import com.github.toolarium.db.changelog.dto.sequence.DropSequenceChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.DropTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.RenameTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.view.CreateViewChangelogEntry;
-import com.github.toolarium.db.changelog.dto.view.DropViewChangelogEntry;
+import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.DropColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.IChangelogColumnDefinition;
+import com.github.toolarium.db.changelog.model.column.ModifyColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.RenameColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.constraint.AddNotNullConstraintChangelogEntry;
+import com.github.toolarium.db.changelog.model.constraint.DropNotNullConstraintChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.CreateIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.DropIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.sequence.CreateSequenceChangelogEntry;
+import com.github.toolarium.db.changelog.model.sequence.DropSequenceChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.DropTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.RenameTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.view.CreateViewChangelogEntry;
+import com.github.toolarium.db.changelog.model.view.DropViewChangelogEntry;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
 
 /**
  * Generic ANSI SQL generator. Produces standard SQL that works on most databases.
@@ -90,7 +91,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
             return generateDropView((DropViewChangelogEntry) entry);
         }
 
-        return Collections.emptyList();
+        throw new ChangelogException("Unsupported entry type for SQL generation: " + entry.getClass().getName());
     }
 
 
@@ -124,6 +125,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      * @return the SQL statements
      */
     protected List<String> generateCreateTable(CreateTableChangelogEntry entry) {
+        requireNonNull(entry.getTableName(), "tableName");
         StringBuilder sql = new StringBuilder();
         sql.append("CREATE TABLE ").append(entry.getTableName()).append(" (");
 
@@ -148,7 +150,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
                 sql.append(" UNIQUE");
             }
             if (col.getDefaultValue() != null) {
-                sql.append(" DEFAULT '").append(col.getDefaultValue()).append("'");
+                sql.append(" DEFAULT '").append(escapeStringLiteral(col.getDefaultValue())).append("'");
             }
             if (col.getDefaultValueComputed() != null) {
                 sql.append(" DEFAULT ").append(col.getDefaultValueComputed());
@@ -174,6 +176,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      * @return the SQL statements
      */
     protected List<String> generateDropTable(DropTableChangelogEntry entry) {
+        requireNonNull(entry.getTableName(), "tableName");
         return Collections.singletonList("DROP TABLE " + entry.getTableName());
     }
 
@@ -185,6 +188,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      * @return the SQL statements
      */
     protected List<String> generateAddColumn(AddColumnChangelogEntry entry) {
+        requireNonNull(entry.getTableName(), "tableName");
         List<String> statements = new ArrayList<>();
         for (IChangelogColumnDefinition col : entry.getColumns()) {
             StringBuilder sql = new StringBuilder();
@@ -195,7 +199,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
                 sql.append(" NOT NULL");
             }
             if (col.getDefaultValue() != null) {
-                sql.append(" DEFAULT '").append(col.getDefaultValue()).append("'");
+                sql.append(" DEFAULT '").append(escapeStringLiteral(col.getDefaultValue())).append("'");
             }
             if (col.getDefaultValueComputed() != null) {
                 sql.append(" DEFAULT ").append(col.getDefaultValueComputed());
@@ -357,5 +361,30 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      */
     protected List<String> generateDropView(DropViewChangelogEntry entry) {
         return Collections.singletonList("DROP VIEW " + entry.getViewName());
+    }
+
+
+    /**
+     * Validate that a required value is not null.
+     *
+     * @param value the value to check
+     * @param name the name for error messages
+     * @throws ChangelogException if the value is null
+     */
+    protected void requireNonNull(Object value, String name) {
+        if (value == null) {
+            throw new ChangelogException("Required attribute [" + name + "] must not be null.");
+        }
+    }
+
+
+    /**
+     * Escape a string literal for safe inclusion in SQL by doubling single quotes.
+     *
+     * @param value the string value
+     * @return the escaped value
+     */
+    protected String escapeStringLiteral(String value) {
+        return value.replace("'", "''");
     }
 }

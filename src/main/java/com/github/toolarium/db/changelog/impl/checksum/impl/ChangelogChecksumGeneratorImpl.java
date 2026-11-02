@@ -5,13 +5,13 @@
  */
 package com.github.toolarium.db.changelog.impl.checksum.impl;
 
-
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
 import com.github.toolarium.db.changelog.impl.checksum.IChangelogChecksumGenerator;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
 
 /**
  * SHA-256 based checksum generator.
@@ -43,6 +43,7 @@ public class ChangelogChecksumGeneratorImpl implements IChangelogChecksumGenerat
             throw new IllegalStateException("SHA-256 algorithm not available", e);
         }
     }
+
 
     /**
      * Convert bytes to hex string.

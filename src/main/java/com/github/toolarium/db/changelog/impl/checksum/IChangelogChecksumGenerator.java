@@ -5,8 +5,8 @@
  */
 package com.github.toolarium.db.changelog.impl.checksum;
 
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
 
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
 
 /**
  * Computes checksums for changesets.

@@ -5,19 +5,18 @@
  */
 package com.github.toolarium.db.changelog.impl.parser;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.ChangelogRunnerBuilder;
 import com.github.toolarium.db.changelog.IChangelogRunner;
-import com.github.toolarium.db.changelog.dto.IChangelog;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.column.AddColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.CreateIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry;
 import com.github.toolarium.db.changelog.impl.resolver.ChangelogParameterResolverFactory;
+import com.github.toolarium.db.changelog.model.IChangelog;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
+import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.CreateIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;

@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.rollback.impl;
 
-
 import com.github.toolarium.db.changelog.impl.rollback.IChangelogSqlRollbackGenerator;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -20,19 +19,32 @@ import java.util.regex.Pattern;
  * @author patrick
  */
 public class ChangelogSqlRollbackGeneratorImpl implements IChangelogSqlRollbackGenerator {
-    private static final Pattern CREATE_TABLE = Pattern.compile(
+    /** Pattern for CREATE TABLE statements. */
+    static final Pattern CREATE_TABLE = Pattern.compile(
             "(?i)^\\s*CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(\\S+)");
-    private static final Pattern ALTER_ADD_COLUMN = Pattern.compile(
+
+    /** Pattern for ALTER TABLE ADD COLUMN statements. */
+    static final Pattern ALTER_ADD_COLUMN = Pattern.compile(
             "(?i)^\\s*ALTER\\s+TABLE\\s+(\\S+)\\s+ADD\\s+(?:COLUMN\\s+)?(\\S+)");
-    private static final Pattern CREATE_INDEX = Pattern.compile(
+
+    /** Pattern for CREATE INDEX statements. */
+    static final Pattern CREATE_INDEX = Pattern.compile(
             "(?i)^\\s*CREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(\\S+)");
-    private static final Pattern CREATE_VIEW = Pattern.compile(
+
+    /** Pattern for CREATE VIEW statements. */
+    static final Pattern CREATE_VIEW = Pattern.compile(
             "(?i)^\\s*CREATE\\s+(?:OR\\s+REPLACE\\s+)?VIEW\\s+(\\S+)");
-    private static final Pattern CREATE_SEQUENCE = Pattern.compile(
+
+    /** Pattern for CREATE SEQUENCE statements. */
+    static final Pattern CREATE_SEQUENCE = Pattern.compile(
             "(?i)^\\s*CREATE\\s+SEQUENCE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(\\S+)");
-    private static final Pattern RENAME_TABLE = Pattern.compile(
+
+    /** Pattern for ALTER TABLE RENAME TO statements. */
+    static final Pattern RENAME_TABLE = Pattern.compile(
             "(?i)^\\s*ALTER\\s+TABLE\\s+(\\S+)\\s+RENAME\\s+TO\\s+(\\S+)");
-    private static final Pattern RENAME_COLUMN = Pattern.compile(
+
+    /** Pattern for ALTER TABLE RENAME COLUMN statements. */
+    static final Pattern RENAME_COLUMN = Pattern.compile(
             "(?i)^\\s*ALTER\\s+TABLE\\s+(\\S+)\\s+RENAME\\s+COLUMN\\s+(\\S+)\\s+TO\\s+(\\S+)");
 
 

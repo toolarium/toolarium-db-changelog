@@ -5,15 +5,15 @@
  */
 package com.github.toolarium.db.changelog.impl.tracking.impl;
 
-
-import com.github.toolarium.db.changelog.dto.ChangelogExecutionType;
-import com.github.toolarium.db.changelog.dto.ChangelogTrackingEntry;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSet;
-import com.github.toolarium.db.changelog.dto.IChangelogChangeSetIdentity;
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
-import com.github.toolarium.db.changelog.dto.IChangelogTrackingEntry;
+import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
 import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker;
+import com.github.toolarium.db.changelog.model.ChangelogExecutionType;
+import com.github.toolarium.db.changelog.model.ChangelogTrackingEntry;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
+import com.github.toolarium.db.changelog.model.IChangelogChangeSetIdentity;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.IChangelogTrackingEntry;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * JDBC implementation of the changelog tracker.
@@ -45,9 +46,11 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
      * @param libraryVersion the library version
      */
     public ChangelogTrackerImpl(String tableName, String libraryVersion) {
+        ChangelogConfiguration.validateIdentifier(tableName, "tableName");
         this.tableName = tableName;
         this.libraryVersion = libraryVersion;
     }
+
 
     /**
      * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#ensureTrackingTable(Connection)
@@ -92,6 +95,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
         }
     }
 
+
     /**
      * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#getAppliedChangeSets(Connection)
      */
@@ -132,19 +136,19 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
         return result;
     }
 
+
     /**
      * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#markChangeSetExecuted(Connection, IChangelogChangeSet, String, ChangelogExecutionType, String)
      */
     @Override
     public void markChangeSetExecuted(Connection connection, IChangelogChangeSet changeSet, String checksum,
                                       ChangelogExecutionType executionType, String deploymentId) throws ChangelogException {
-        int nextOrder = getNextOrderExecuted(connection);
         String description = buildDescription(changeSet);
 
         String sql = "INSERT INTO " + tableName
                 + " (id, author, filepath, checksum, date_executed, order_executed, "
                 + "execution_type, description, comments, deployment_id, library_version) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?, COALESCE((SELECT MAX(order_executed) FROM " + tableName + "), 0) + 1, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, changeSet.getIdentity().getId());
@@ -152,12 +156,11 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
             stmt.setString(3, changeSet.getIdentity().getFilepath());
             stmt.setString(4, checksum);
             stmt.setTimestamp(5, Timestamp.from(Instant.now()));
-            stmt.setInt(6, nextOrder);
-            stmt.setString(7, executionType.name());
-            stmt.setString(8, description);
-            stmt.setString(9, changeSet.getComment());
-            stmt.setString(10, deploymentId);
-            stmt.setString(11, libraryVersion);
+            stmt.setString(6, executionType.name());
+            stmt.setString(7, description);
+            stmt.setString(8, changeSet.getComment());
+            stmt.setString(9, deploymentId);
+            stmt.setString(10, libraryVersion);
             stmt.executeUpdate();
         } catch (SQLException e) {
             if (LOG.isDebugEnabled()) {
@@ -166,6 +169,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
             throw new ChangelogException("Failed to record changeset [" + changeSet.getIdentity() + BRACKET_DOT, e);
         }
     }
+
 
     /**
      * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#removeChangeSetEntry(Connection, IChangelogChangeSetIdentity)
@@ -186,6 +190,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
             throw new ChangelogException("Failed to remove changeset entry.", e);
         }
     }
+
 
     /**
      * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#tagLastApplied(Connection, String)
@@ -209,6 +214,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
         }
     }
 
+
     /**
      * @see com.github.toolarium.db.changelog.impl.tracking.IChangelogTracker#clearChecksums(Connection)
      */
@@ -227,6 +233,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
         }
     }
 
+
     /**
      * Check if the tracking table exists.
      *
@@ -236,38 +243,20 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
      */
     private boolean tableExists(Connection connection) throws SQLException {
         DatabaseMetaData meta = connection.getMetaData();
-        try (ResultSet rs = meta.getTables(null, null, "%", new String[]{"TABLE"})) {
-            while (rs.next()) {
-                if (tableName.equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
-                    return true;
-                }
+        try (ResultSet rs = meta.getTables(null, null, tableName, new String[]{"TABLE"})) {
+            if (rs.next()) {
+                return true;
+            }
+        }
+        // Some databases are case-sensitive; try uppercase as fallback
+        try (ResultSet rs = meta.getTables(null, null, tableName.toUpperCase(), new String[]{"TABLE"})) {
+            if (rs.next()) {
+                return true;
             }
         }
         return false;
     }
 
-    /**
-     * Get the next order_executed value.
-     *
-     * @param connection the connection
-     * @return the next order value
-     * @throws ChangelogException on error
-     */
-    private int getNextOrderExecuted(Connection connection) throws ChangelogException {
-        String sql = "SELECT MAX(order_executed) FROM " + tableName;
-        try (PreparedStatement stmt = connection.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            if (rs.next()) {
-                return rs.getInt(1) + 1;
-            }
-            return 1;
-        } catch (SQLException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Failed to determine next order_executed." + e.getMessage(), e);
-            }
-            throw new ChangelogException("Failed to determine next order_executed.", e);
-        }
-    }
 
     /**
      * Build a description string from the changeset entries.

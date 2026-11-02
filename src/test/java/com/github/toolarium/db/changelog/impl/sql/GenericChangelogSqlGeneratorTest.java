@@ -5,18 +5,17 @@
  */
 package com.github.toolarium.db.changelog.impl.sql;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.github.toolarium.db.changelog.dto.column.AddColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.column.ChangelogColumnDefinition;
-import com.github.toolarium.db.changelog.dto.column.DropColumnChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.CreateIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.index.DropIndexChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.CreateTableChangelogEntry;
-import com.github.toolarium.db.changelog.dto.table.DropTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.column.ChangelogColumnDefinition;
+import com.github.toolarium.db.changelog.model.column.DropColumnChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.CreateIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.index.DropIndexChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.CreateTableChangelogEntry;
+import com.github.toolarium.db.changelog.model.table.DropTableChangelogEntry;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -190,7 +189,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testUnsupportedEntryReturnsEmpty() {
-        List<String> sql = generator.generateSql(new com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry("SELECT 1"));
+        List<String> sql = generator.generateSql(new com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry("SELECT 1"));
         assertTrue(sql.isEmpty());
     }
 
@@ -206,7 +205,7 @@ public class GenericChangelogSqlGeneratorTest {
         assertTrue(generator.supports(new DropColumnChangelogEntry(TABLE_T, Collections.emptyList()), null));
         assertTrue(generator.supports(new CreateIndexChangelogEntry(TABLE_T, "i", Collections.emptyList(), false), null));
         assertTrue(generator.supports(new DropIndexChangelogEntry(TABLE_T, "i"), null));
-        assertFalse(generator.supports(new com.github.toolarium.db.changelog.dto.sql.SqlChangelogEntry("SELECT 1"), null));
+        assertFalse(generator.supports(new com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry("SELECT 1"), null));
     }
 
 
@@ -215,7 +214,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testRenameTable() {
-        var entry = new com.github.toolarium.db.changelog.dto.table.RenameTableChangelogEntry("old_t", "new_t");
+        var entry = new com.github.toolarium.db.changelog.model.table.RenameTableChangelogEntry("old_t", "new_t");
         List<String> sql = generator.generateSql(entry);
         assertEquals("ALTER TABLE old_t RENAME TO new_t", sql.get(0));
     }
@@ -226,7 +225,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testRenameColumn() {
-        var entry = new com.github.toolarium.db.changelog.dto.column.RenameColumnChangelogEntry(TABLE_USERS, "old_c", "new_c");
+        var entry = new com.github.toolarium.db.changelog.model.column.RenameColumnChangelogEntry(TABLE_USERS, "old_c", "new_c");
         List<String> sql = generator.generateSql(entry);
         assertEquals("ALTER TABLE users RENAME COLUMN old_c TO new_c", sql.get(0));
     }
@@ -237,7 +236,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testModifyColumn() {
-        var entry = new com.github.toolarium.db.changelog.dto.column.ModifyColumnChangelogEntry(TABLE_USERS, "name", "VARCHAR(500)");
+        var entry = new com.github.toolarium.db.changelog.model.column.ModifyColumnChangelogEntry(TABLE_USERS, "name", "VARCHAR(500)");
         List<String> sql = generator.generateSql(entry);
         assertEquals("ALTER TABLE users ALTER COLUMN name VARCHAR(500)", sql.get(0));
     }
@@ -248,7 +247,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testCreateSequence() {
-        var entry = new com.github.toolarium.db.changelog.dto.sequence.CreateSequenceChangelogEntry("user_seq");
+        var entry = new com.github.toolarium.db.changelog.model.sequence.CreateSequenceChangelogEntry("user_seq");
         List<String> sql = generator.generateSql(entry);
         assertEquals("CREATE SEQUENCE user_seq", sql.get(0));
     }
@@ -259,7 +258,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testDropSequence() {
-        var entry = new com.github.toolarium.db.changelog.dto.sequence.DropSequenceChangelogEntry("user_seq");
+        var entry = new com.github.toolarium.db.changelog.model.sequence.DropSequenceChangelogEntry("user_seq");
         List<String> sql = generator.generateSql(entry);
         assertEquals("DROP SEQUENCE user_seq", sql.get(0));
     }
@@ -270,7 +269,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testCreateView() {
-        var entry = new com.github.toolarium.db.changelog.dto.view.CreateViewChangelogEntry("v_users", "SELECT id FROM users");
+        var entry = new com.github.toolarium.db.changelog.model.view.CreateViewChangelogEntry("v_users", "SELECT id FROM users");
         List<String> sql = generator.generateSql(entry);
         assertEquals("CREATE OR REPLACE VIEW v_users AS SELECT id FROM users", sql.get(0));
     }
@@ -281,7 +280,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testDropView() {
-        var entry = new com.github.toolarium.db.changelog.dto.view.DropViewChangelogEntry("v_users");
+        var entry = new com.github.toolarium.db.changelog.model.view.DropViewChangelogEntry("v_users");
         List<String> sql = generator.generateSql(entry);
         assertEquals("DROP VIEW v_users", sql.get(0));
     }
@@ -292,7 +291,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testAddNotNull() {
-        var entry = new com.github.toolarium.db.changelog.dto.constraint.AddNotNullConstraintChangelogEntry(TABLE_USERS, "email");
+        var entry = new com.github.toolarium.db.changelog.model.constraint.AddNotNullConstraintChangelogEntry(TABLE_USERS, "email");
         List<String> sql = generator.generateSql(entry);
         assertEquals("ALTER TABLE users ALTER COLUMN email SET NOT NULL", sql.get(0));
     }
@@ -303,7 +302,7 @@ public class GenericChangelogSqlGeneratorTest {
      */
     @Test
     void testDropNotNull() {
-        var entry = new com.github.toolarium.db.changelog.dto.constraint.DropNotNullConstraintChangelogEntry(TABLE_USERS, "email");
+        var entry = new com.github.toolarium.db.changelog.model.constraint.DropNotNullConstraintChangelogEntry(TABLE_USERS, "email");
         List<String> sql = generator.generateSql(entry);
         assertEquals("ALTER TABLE users ALTER COLUMN email DROP NOT NULL", sql.get(0));
     }

@@ -5,8 +5,8 @@
  */
 package com.github.toolarium.db.changelog.impl.lock;
 
-
 import com.github.toolarium.db.changelog.exception.ChangelogException;
+
 
 /**
  * Migration locking interface.

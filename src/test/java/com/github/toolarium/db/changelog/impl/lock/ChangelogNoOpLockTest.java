@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.lock;
 
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

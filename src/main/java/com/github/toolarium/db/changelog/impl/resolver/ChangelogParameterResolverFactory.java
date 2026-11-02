@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.resolver;
 
-
 import com.github.toolarium.db.changelog.impl.resolver.impl.ChangelogParameterResolverImpl;
 
 

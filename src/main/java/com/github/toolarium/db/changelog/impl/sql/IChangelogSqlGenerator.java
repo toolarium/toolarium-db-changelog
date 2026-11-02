@@ -5,8 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.sql;
 
-
-import com.github.toolarium.db.changelog.dto.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import java.sql.Connection;
 import java.util.List;
 

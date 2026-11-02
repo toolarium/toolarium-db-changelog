@@ -5,8 +5,9 @@
  */
 package com.github.toolarium.db.changelog.impl.lock;
 
-
+import com.github.toolarium.db.changelog.impl.lock.impl.ChangelogLeaderElectionLockImpl;
 import com.github.toolarium.db.changelog.impl.lock.impl.ChangelogNoOpLockImpl;
+import javax.sql.DataSource;
 
 
 /**
@@ -44,11 +45,24 @@ public final class ChangelogLockFactory {
 
 
     /**
-     * Create a no-op lock (single-instance, no concurrency protection).
+     * Get a no-op lock (single-instance, no concurrency protection).
      *
      * @return the lock instance
      */
     public IChangelogLock getChangelogLock() {
         return new ChangelogNoOpLockImpl();
+    }
+
+
+    /**
+     * Get a leader-election based lock using the DATABASE strategy.
+     * Uses the same DataSource as the changelog and creates a lock table.
+     *
+     * @param dataSource the data source
+     * @param lockTableName the lock table name (e.g., DB_CHANGELOG_LOCK)
+     * @return the lock instance
+     */
+    public IChangelogLock getChangelogLock(DataSource dataSource, String lockTableName) {
+        return new ChangelogLeaderElectionLockImpl(dataSource, lockTableName);
     }
 }

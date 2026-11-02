@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.rollback;
 
-
 import com.github.toolarium.db.changelog.impl.rollback.impl.ChangelogSqlRollbackGeneratorImpl;
 
 

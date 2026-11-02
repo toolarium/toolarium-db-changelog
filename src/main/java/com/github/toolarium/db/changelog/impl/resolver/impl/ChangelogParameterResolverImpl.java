@@ -5,10 +5,10 @@
  */
 package com.github.toolarium.db.changelog.impl.resolver.impl;
 
-
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 
 /**
  * Default implementation of parameter resolution using a simple map-based lookup.

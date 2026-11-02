@@ -1,4 +1,5 @@
-[![License: MPL-2.0](https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg)](https://github.com/toolarium/toolarium-db-changelog/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/toolarium/toolarium-db-changelog)](https://github.com/toolarium/toolarium-db-changelog/blob/master/LICENSE)
+[
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.toolarium/toolarium-db-changelog/0.0.1)](https://search.maven.org/artifact/com.github.toolarium/toolarium-db-changelog/0.0.1/jar)
 [![javadoc](https://javadoc.io/badge2/com.github.toolarium/toolarium-db-changelog/javadoc.svg)](https://javadoc.io/doc/com.github.toolarium/toolarium-db-changelog)
 
@@ -13,11 +14,15 @@ A Java library for automated database schema migrations and rollbacks. It provid
 - **Structured DDL changes**: createTable, dropTable, addColumn, dropColumn, renameTable, renameColumn, modifyColumn, createIndex, dropIndex with auto-rollback
 - **Constraints**: addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull
 - **Sequences and views**: createSequence, dropSequence, createView, dropView
+- **Preconditions**: dbms, tableExists, columnExists, sqlCheck, and/or/not combinators with HALT/WARN/CONTINUE/MARK_RAN
 - **Own changelog format**: clean `.db.yaml`, `.db.xml`, and `.db.json` with property substitution
 - **External format import**: parse and migrate from external changelog formats (XML, YAML, JSON, SQL)
 - **Distributed locking**: via `toolarium-leader-election` (self-healing, no stale locks)
 - **SHA-256 checksums**: stable algorithm, no version prefix
-- **Rollback automation**: auto-rollback for DDL, Level 1 SQL rollback generator for raw SQL, pre-execution snapshots, validation enforcement
+- **DML change types**: insert, update, delete, tagDatabase
+- **Context and label filtering**: conditional changeset execution based on active contexts and labels
+- **Sync operation**: mark all pending changesets as executed without running (baselining)
+- **Rollback automation**: auto-rollback for DDL, Level 1 SQL rollback generator for raw SQL, dry-run via `generateRollbackSql()`
 - **All major databases**: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, H2, DB2, and more
 
 
@@ -51,6 +56,20 @@ IChangelogRunner runner = ChangelogRunnerBuilder.builder()
 
 runner.update();
 ```
+
+```java
+// With context/label filtering and distributed locking
+IChangelogRunner runner = ChangelogRunnerBuilder.builder()
+    .dataSource(dataSource)
+    .changelog("classpath:db/changelog/changelog-master.db.yaml")
+    .contexts(List.of("production", "shared"))
+    .labels(List.of("v1.0"))
+    .leaderElection(true)
+    .build();
+
+runner.update();
+```
+
 
 **Example changelog (YAML)** (`changelog-master.db.yaml`):
 ```yaml
@@ -135,7 +154,8 @@ runner.rollback("v1.0");                 // rollback to tag
 runner.rollback(Instant.parse("..."));   // rollback to point in time
 runner.generateRollbackSql(3);           // dry-run: rollback SQL without executing
 runner.tag("v1.0");                      // tag current state
-runner.sync();                           // mark all pending as executed
+runner.sync();                           // mark all pending as executed (baselining)
+runner.status();                         // list pending and applied changesets
 runner.history();                        // list applied changesets
 runner.clearChecksums();                 // reset checksums
 ```
