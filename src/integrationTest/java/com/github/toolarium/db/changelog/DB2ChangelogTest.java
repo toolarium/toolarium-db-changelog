@@ -34,6 +34,7 @@ public class DB2ChangelogTest extends AbstractChangelogIntegrationTest {
     @Override
     protected DataSource getDataSource() {
         DB2SimpleDataSource ds = new DB2SimpleDataSource();
+        ds.setDriverType(4);
         ds.setServerName(DB2.getHost());
         ds.setPortNumber(DB2.getMappedPort(50000));
         ds.setDatabaseName(DB2.getDatabaseName());

@@ -8,6 +8,7 @@ package com.github.toolarium.db.changelog.impl.sql.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
 import org.h2.jdbcx.JdbcDataSource;
@@ -64,5 +65,30 @@ public class ChangelogDatabaseTypeUtilTest {
     @Test
     void testClobTypeH2() {
         assertEquals("CLOB", ChangelogDatabaseTypeUtil.getInstance().getClobType(h2Connection));
+    }
+
+
+    /**
+     * Test column sizes return default (non-Firebird) values for H2.
+     */
+    @Test
+    void testColumnSizesH2() {
+        ChangelogDatabaseTypeUtil util = ChangelogDatabaseTypeUtil.getInstance();
+        assertEquals(200, util.getIdColumnSize(h2Connection));
+        assertEquals(200, util.getAuthorColumnSize(h2Connection));
+        assertEquals(350, util.getFilepathColumnSize(h2Connection));
+    }
+
+
+    /**
+     * Test total primary key size fits within MySQL 3072 byte limit (4 bytes per char in utf8mb4).
+     */
+    @Test
+    void testPrimaryKeySizeWithinMySQLLimit() {
+        ChangelogDatabaseTypeUtil util = ChangelogDatabaseTypeUtil.getInstance();
+        int total = util.getIdColumnSize(h2Connection)
+                + util.getAuthorColumnSize(h2Connection)
+                + util.getFilepathColumnSize(h2Connection);
+        assertTrue(total * 4 <= 3072, "PK size " + (total * 4) + " exceeds MySQL 3072 byte limit");
     }
 }

@@ -29,7 +29,7 @@ A Java library for automated database schema migrations and rollbacks. It provid
 - **Configurable policies**: snapshot policy, rollback policy, object quoting strategy
 - **Pluggable resource resolver**: unified resolution across classpath, JARs, and file system via `IChangelogResourceResolver`
 - **Security hardened**: SQL identifier validation, XXE protection, safe YAML deserialization, statement timeouts
-- **15 tested databases**: H2, HSQLDB, Derby, SQLite (embedded), PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, CockroachDB, DB2, Firebird, EnterpriseDB, TiDB, YugabyteDB
+- **14 tested databases**: H2, HSQLDB, Derby, SQLite (embedded), PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, CockroachDB, DB2, Firebird, TiDB, YugabyteDB
 - **Additional databases**: any JDBC-compliant database via generic ANSI SQL (not tested: Snowflake, SAP HANA, Sybase, Informix)
 
 

@@ -68,11 +68,12 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
             }
             LOG.info("Creating tracking table [" + tableName + BRACKET_DOT);
 
-            String dateTimeType = ChangelogDatabaseTypeUtil.getInstance().getDateTimeType(connection);
+            ChangelogDatabaseTypeUtil dbTypeUtil = ChangelogDatabaseTypeUtil.getInstance();
+            String dateTimeType = dbTypeUtil.getDateTimeType(connection);
             String sql = "CREATE TABLE " + tableName + " ("
-                    + "id VARCHAR(200) NOT NULL, "
-                    + "author VARCHAR(200) NOT NULL, "
-                    + "filepath VARCHAR(350) NOT NULL, "
+                    + "id VARCHAR(" + dbTypeUtil.getIdColumnSize(connection) + ") NOT NULL, "
+                    + "author VARCHAR(" + dbTypeUtil.getAuthorColumnSize(connection) + ") NOT NULL, "
+                    + "filepath VARCHAR(" + dbTypeUtil.getFilepathColumnSize(connection) + ") NOT NULL, "
                     + "checksum VARCHAR(64), "
                     + "date_executed " + dateTimeType + " NOT NULL, "
                     + "order_executed INT NOT NULL, "
@@ -145,6 +146,7 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
     @Override
     public void markChangeSetExecuted(Connection connection, IChangelogChangeSet changeSet, String checksum,
                                       ChangelogExecutionType executionType, String deploymentId) throws ChangelogException {
+        validateIdentityLength(connection, changeSet.getIdentity());
         String description = buildDescription(changeSet);
 
         String sql = "INSERT INTO " + tableName
@@ -283,5 +285,33 @@ public class ChangelogTrackerImpl implements IChangelogTracker {
             return sb.substring(0, 1021) + "...";
         }
         return sb.toString();
+    }
+
+
+    /**
+     * Validate that the changeset identity values fit within the database column size limits.
+     *
+     * @param connection the database connection
+     * @param identity the changeset identity
+     * @throws ChangelogException if any value exceeds the column limit
+     */
+    private void validateIdentityLength(Connection connection, IChangelogChangeSetIdentity identity) throws ChangelogException {
+        ChangelogDatabaseTypeUtil dbTypeUtil = ChangelogDatabaseTypeUtil.getInstance();
+        int maxId = dbTypeUtil.getIdColumnSize(connection);
+        int maxAuthor = dbTypeUtil.getAuthorColumnSize(connection);
+        int maxFilepath = dbTypeUtil.getFilepathColumnSize(connection);
+
+        if (identity.getId() != null && identity.getId().length() > maxId) {
+            throw new ChangelogException("Changeset id [" + identity.getId()
+                    + "] exceeds maximum length of " + maxId + " characters for this database.");
+        }
+        if (identity.getAuthor() != null && identity.getAuthor().length() > maxAuthor) {
+            throw new ChangelogException("Changeset author [" + identity.getAuthor()
+                    + "] exceeds maximum length of " + maxAuthor + " characters for this database.");
+        }
+        if (identity.getFilepath() != null && identity.getFilepath().length() > maxFilepath) {
+            throw new ChangelogException("Changeset filepath [" + identity.getFilepath()
+                    + "] exceeds maximum length of " + maxFilepath + " characters for this database.");
+        }
     }
 }

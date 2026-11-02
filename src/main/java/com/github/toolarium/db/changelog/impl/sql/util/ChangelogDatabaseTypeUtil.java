@@ -88,6 +88,61 @@ public final class ChangelogDatabaseTypeUtil {
 
 
     /**
+     * Get the maximum VARCHAR size for the changeset id column based on database key size limits.
+     *
+     * @param connection the database connection
+     * @return the maximum size
+     */
+    public int getIdColumnSize(Connection connection) {
+        if (hasSmallKeyLimit(connection)) {
+            return 80;
+        }
+        return 200;
+    }
+
+
+    /**
+     * Get the maximum VARCHAR size for the author column based on database key size limits.
+     *
+     * @param connection the database connection
+     * @return the maximum size
+     */
+    public int getAuthorColumnSize(Connection connection) {
+        if (hasSmallKeyLimit(connection)) {
+            return 80;
+        }
+        return 200;
+    }
+
+
+    /**
+     * Get the maximum VARCHAR size for the filepath column based on database key size limits.
+     *
+     * @param connection the database connection
+     * @return the maximum size
+     */
+    public int getFilepathColumnSize(Connection connection) {
+        if (hasSmallKeyLimit(connection)) {
+            return 100;
+        }
+        return 350;
+    }
+
+
+    /**
+     * Check if the database has a small primary key size limit.
+     * Firebird with UTF8 charset has a ~1024 byte key limit (page size / 4).
+     *
+     * @param connection the database connection
+     * @return true if the database has a small key limit
+     */
+    private boolean hasSmallKeyLimit(Connection connection) {
+        String dbName = getDatabaseProductName(connection);
+        return dbName.contains("firebird");
+    }
+
+
+    /**
      * Get the database product name in lowercase.
      *
      * @param connection the database connection
