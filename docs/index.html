@@ -274,6 +274,7 @@
     <li><a href="#security">Security</a></li>
     <li><a href="#architecture">Architecture</a></li>
     <li><a href="#databases">Supported Databases</a></li>
+    <li><a href="#related-projects">Related Projects</a></li>
     <li><a href="#license">License</a></li>
   </ul>
 </nav>
@@ -1137,6 +1138,58 @@ ALTER TABLE users ADD COLUMN email VARCHAR(255);</code></pre>
   <tr><td>Table alias without AS keyword</td><td>Oracle</td></tr>
   <tr><td>Case-insensitive table existence check (upper + lowercase)</td><td>PostgreSQL, MySQL</td></tr>
 </table>
+</section>
+
+<!-- RELATED PROJECTS -->
+<section id="related-projects">
+<h2>Related Projects</h2>
+<p>The toolarium-db-changelog ecosystem includes companion projects for common integration scenarios, all released in v0.8.0:</p>
+
+<div class="feature-grid">
+  <div class="feature-card">
+    <h4><a href="https://github.com/toolarium/toolarium-db-changelog-spring-boot">Spring Boot Starter</a></h4>
+    <p>Auto-configuration and starter for Spring Boot applications. Automatically runs migrations on startup with configurable properties. Supports Spring profiles as changelog contexts.</p>
+  </div>
+  <div class="feature-card">
+    <h4><a href="https://github.com/toolarium/toolarium-db-changelog-gradle-plugin">Gradle Plugin</a></h4>
+    <p>Gradle plugin for running migrations, rollbacks, status checks, and format conversion as build tasks. Integrates with the Gradle build lifecycle.</p>
+  </div>
+  <div class="feature-card">
+    <h4><a href="https://github.com/toolarium/toolarium-db-changelog-cli">CLI Tool</a></h4>
+    <p>Command-line interface for running migrations, rollbacks, sync, validate, status, and format conversion. Standalone executable with JDBC driver auto-detection.</p>
+  </div>
+</div>
+
+<h3>Spring Boot</h3>
+<pre><code><span class="comment">// build.gradle</span>
+<span class="keyword">implementation</span> <span class="string">'com.github.toolarium:toolarium-db-changelog-spring-boot:0.8.0'</span>
+
+<span class="comment"># application.yml</span>
+<span class="keyword">toolarium</span>:
+  <span class="keyword">db-changelog</span>:
+    <span class="keyword">changelog</span>: <span class="string">classpath:db/changelog/changelog-master.db.yaml</span>
+    <span class="keyword">enabled</span>: <span class="keyword">true</span></code></pre>
+
+<h3>Gradle Plugin</h3>
+<pre><code><span class="comment">// build.gradle</span>
+<span class="keyword">plugins</span> {
+    <span class="keyword">id</span> <span class="string">'com.github.toolarium.db-changelog'</span> <span class="keyword">version</span> <span class="string">'0.8.0'</span>
+}
+
+<span class="keyword">dbChangelog</span> {
+    <span class="keyword">changelog</span> = <span class="string">'src/main/resources/db/changelog/changelog-master.db.yaml'</span>
+    <span class="keyword">url</span> = <span class="string">'jdbc:h2:./build/testdb'</span>
+}</code></pre>
+
+<h3>CLI</h3>
+<pre><code><span class="comment"># Run migrations</span>
+db-changelog update --changelog db/changelog-master.db.yaml --url jdbc:postgresql://localhost/mydb
+
+<span class="comment"># Rollback last 3 changesets</span>
+db-changelog rollback --count 3 --url jdbc:postgresql://localhost/mydb
+
+<span class="comment"># Convert Flyway migrations to native format</span>
+db-changelog migrate-flyway --source db/migration/ --output migrated.db.yaml</code></pre>
 </section>
 
 <!-- LICENSE -->

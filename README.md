@@ -283,6 +283,17 @@ ChangelogWriterFactory.getInstance().getWriter(".db.xml").write(changelog, outpu
 ```
 
 
+## Related Projects
+
+| Project | Description |
+|---|---|
+| [toolarium-db-changelog-spring-boot](https://github.com/toolarium/toolarium-db-changelog-spring-boot) | Spring Boot auto-configuration and starter for toolarium-db-changelog |
+| [toolarium-db-changelog-gradle-plugin](https://github.com/toolarium/toolarium-db-changelog-gradle-plugin) | Gradle plugin for running migrations, generating changelogs, and validating schemas |
+| [toolarium-db-changelog-cli](https://github.com/toolarium/toolarium-db-changelog-cli) | Command-line interface for running migrations, rollbacks, and format conversion |
+
+All related projects are released in v0.8.0.
+
+
 ## Built With
 
 * [cb](https://github.com/toolarium/common-build) - The toolarium common build
