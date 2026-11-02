@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [ 0.8.0 ] - 2026-11-02
 ### Added
 - Core changelog runner with update, tag, sync, status, history, and clearChecksums operations.
-- SHA-256 based checksum generation for changesets.
+- SHA 256 based checksum generation for changesets.
 - JDBC tracking table (`DB_CHANGELOG`) with auto-creation.
 - Changelog parsing for DB-Changelog YAML (`.db.yaml`), XML (`.db.xml`), and JSON (`.db.json`) formats.
 - External SQL changelog format import (`.sql` with `--changeset` directives).
