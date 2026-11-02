@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.impl.resolver.impl.ChangelogParameterResolverImpl;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -102,5 +104,72 @@ public class ChangelogParameterResolverTest {
         ChangelogParameterResolverImpl resolver = new ChangelogParameterResolverImpl(props);
         assertEquals("postgres", resolver.resolve("${db}"));
         assertTrue(resolver.hasProperty("db"));
+    }
+
+
+    /**
+     * Test system property resolution via PropertyExpander.
+     */
+    @Test
+    void testSystemPropertyResolution() {
+        System.setProperty("test.changelog.prop", "sysPropValue");
+        try {
+            ChangelogParameterResolverImpl resolver = new ChangelogParameterResolverImpl();
+            assertEquals("sysPropValue", resolver.resolve("${test.changelog.prop}"));
+            assertTrue(resolver.hasProperty("test.changelog.prop"));
+        } finally {
+            System.clearProperty("test.changelog.prop");
+        }
+    }
+
+
+    /**
+     * Test changelog property takes precedence over system property.
+     */
+    @Test
+    void testChangelogPropertyPrecedence() {
+        System.setProperty("test.precedence.prop", "fromSystem");
+        try {
+            ChangelogParameterResolverImpl resolver = new ChangelogParameterResolverImpl();
+            resolver.setProperty("test.precedence.prop", "fromChangelog");
+            assertEquals("fromChangelog", resolver.resolve("${test.precedence.prop}"));
+        } finally {
+            System.clearProperty("test.precedence.prop");
+        }
+    }
+
+
+    /**
+     * Test hasProperty detects system properties.
+     */
+    @Test
+    void testHasPropertySystemProperty() {
+        // java.version is always available
+        assertTrue(new ChangelogParameterResolverImpl().hasProperty("java.version"));
+    }
+
+
+    /**
+     * Test loadProperties from InputStream.
+     */
+    @Test
+    void testLoadProperties() {
+        String propsContent = "db.host=localhost\ndb.port=5432\n";
+        ChangelogParameterResolverImpl resolver = new ChangelogParameterResolverImpl();
+        resolver.loadProperties(new ByteArrayInputStream(propsContent.getBytes(StandardCharsets.UTF_8)));
+
+        assertEquals("localhost", resolver.resolve("${db.host}"));
+        assertEquals("5432", resolver.resolve("${db.port}"));
+        assertTrue(resolver.hasProperty("db.host"));
+    }
+
+
+    /**
+     * Test constructor with null properties.
+     */
+    @Test
+    void testConstructorWithNullProperties() {
+        ChangelogParameterResolverImpl resolver = new ChangelogParameterResolverImpl(null);
+        assertEquals("plain", resolver.resolve("plain"));
     }
 }

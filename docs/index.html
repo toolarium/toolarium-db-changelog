@@ -246,7 +246,7 @@
     <a href="https://github.com/toolarium/toolarium-db-changelog"><img src="logo/toolarium-db-changelog.svg" alt="toolarium-db-changelog logo"></a>
     <div>
       <a href="https://github.com/toolarium/toolarium-db-changelog" style="color:inherit;text-decoration:none"><h1>toolarium-db-changelog</h1></a>
-      <p>The open-source alternative to Liquibase and Flyway, committed to remaining open source. All features free, no commercial restrictions, forever. Rollback, dry-run, preconditions, structured DDL, distributed locking, and import of existing Liquibase/Flyway changelogs.</p>
+      <p>The open-source alternative to Liquibase and Flyway, committed to remaining open source. All features free, no commercial restrictions, forever. Rollback, dry-run, preconditions, structured DDL, distributed locking, changelog writing, and import of existing Liquibase and Flyway changelogs.</p>
       <span class="badge"><img src="https://img.shields.io/badge/License-MPL%202.0-brightgreen.svg" alt="MPL-2.0"></span>
       <span class="badge"><img src="https://img.shields.io/badge/Java-11%2B-blue.svg" alt="Java 11+"></span>
     </div>
@@ -268,6 +268,7 @@
     <li><a href="#rollback">Rollback</a></li>
     <li><a href="#configuration">Configuration</a></li>
     <li><a href="#resource-resolution">Resource Resolution</a></li>
+    <li><a href="#changelog-writing">Changelog Writing</a></li>
     <li><a href="#external-format-import">External Format Import</a></li>
     <li><a href="#comparison">Comparison with Other Tools</a></li>
     <li><a href="#security">Security</a></li>
@@ -334,7 +335,7 @@ runner.update();</code></pre>
   </div>
   <div class="feature-card">
     <h4>Preconditions</h4>
-    <p>dbms, tableExists, columnExists, indexExists, viewExists, sequenceExists, sqlCheck with and/or/not combinators and HALT/WARN/CONTINUE/MARK_RAN failure actions.</p>
+    <p>dbms, tableExists, columnExists, indexExists, viewExists, sequenceExists, tableIsEmpty, rowCount, changeLogPropertyDefined, sqlCheck with and/or/not combinators and HALT/WARN/CONTINUE/MARK_RAN failure actions.</p>
   </div>
   <div class="feature-card">
     <h4>Own Changelog Format</h4>
@@ -351,6 +352,18 @@ runner.update();</code></pre>
   <div class="feature-card">
     <h4>Resilient Rollback</h4>
     <p>Continues on partial failure, reports all errors. Configurable rollback policy (WARN, FAIL, IGNORE).</p>
+  </div>
+  <div class="feature-card">
+    <h4>Changelog Writing</h4>
+    <p>Serialize changelog models to <code>.db.yaml</code>, <code>.db.xml</code>, and <code>.db.json</code> via <code>IChangelogWriter</code>. Full round-trip support: write then parse back.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Format Migration</h4>
+    <p>Convert Liquibase (XML, YAML, JSON, SQL) and Flyway (<code>V*__*.sql</code>, <code>R__*.sql</code>) changelogs to native format via <code>IChangelogMigrator</code>.</p>
+  </div>
+  <div class="feature-card">
+    <h4>Property Resolution</h4>
+    <p><code>${name}</code> resolves from changelog properties, system properties, and environment variables via toolarium-common <code>PropertyExpander</code>. Load from <code>.properties</code> files.</p>
   </div>
   <div class="feature-card">
     <h4>Pluggable Resource Resolver</h4>
@@ -383,12 +396,12 @@ runner.update();</code></pre>
 <!-- CHANGELOG FORMAT -->
 <section id="changelog-format">
 <h2>Changelog Format</h2>
-<p>The library supports three native formats and one external import format:</p>
+<p>The library supports three formats and one external import format:</p>
 <table>
   <tr><th>Format</th><th>Extension</th><th>Description</th></tr>
-  <tr><td>DB-Changelog YAML</td><td><code>.db.yaml</code> / <code>.db.yml</code></td><td>Recommended native format</td></tr>
-  <tr><td>DB-Changelog XML</td><td><code>.db.xml</code></td><td>Native XML format</td></tr>
-  <tr><td>DB-Changelog JSON</td><td><code>.db.json</code></td><td>Native JSON format</td></tr>
+  <tr><td>DB-Changelog YAML</td><td><code>.db.yaml</code> / <code>.db.yml</code></td><td>Recommended format</td></tr>
+  <tr><td>DB-Changelog XML</td><td><code>.db.xml</code></td><td>XML format</td></tr>
+  <tr><td>DB-Changelog JSON</td><td><code>.db.json</code></td><td>JSON format</td></tr>
   <tr><td>External SQL</td><td><code>.sql</code></td><td>Formatted SQL with <code>--changeset</code> directives</td></tr>
 </table>
 
@@ -770,6 +783,9 @@ runner.update();</code></pre>
   <tr><td><code>sqlCheck</code></td><td>Execute SQL and check the result</td></tr>
   <tr><td><code>changeSetExecuted</code></td><td>Check if a specific changeset was already applied</td></tr>
   <tr><td><code>runningAs</code></td><td>Check the database user</td></tr>
+  <tr><td><code>tableIsEmpty</code></td><td>Check if a table has zero rows</td></tr>
+  <tr><td><code>rowCount</code></td><td>Check if a table has an expected number of rows</td></tr>
+  <tr><td><code>changeLogPropertyDefined</code></td><td>Check if a changelog property is defined (includes system properties and environment variables)</td></tr>
 </table>
 
 <h3>Failure actions</h3>
@@ -784,7 +800,7 @@ runner.update();</code></pre>
 <h3>Logical combinators</h3>
 <p>Preconditions can be combined with <code>and</code>, <code>or</code>, and <code>not</code> operators.</p>
 
-<h3>YAML example</h3>
+<h3>YAML examples</h3>
 <pre><code><span class="keyword">changesets</span>:
   - <span class="keyword">id</span>: <span class="string">h2-only-change</span>
     <span class="keyword">preconditions</span>:
@@ -793,7 +809,33 @@ runner.update();</code></pre>
         - <span class="keyword">dbms</span>: <span class="string">h2</span>
         - <span class="keyword">tableExists</span>: <span class="string">users</span>
     <span class="keyword">changes</span>:
-      - <span class="keyword">sql</span>: <span class="string">"ALTER TABLE users ADD COLUMN extra VARCHAR(50)"</span></code></pre>
+      - <span class="keyword">sql</span>: <span class="string">"ALTER TABLE users ADD COLUMN extra VARCHAR(50)"</span>
+
+  - <span class="keyword">id</span>: <span class="string">seed-only-if-empty</span>
+    <span class="keyword">preconditions</span>:
+      <span class="keyword">onFail</span>: <span class="string">CONTINUE</span>
+      <span class="keyword">checks</span>:
+        - <span class="keyword">tableIsEmpty</span>: <span class="string">users</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"INSERT INTO users (id, name) VALUES (1, 'Admin')"</span>
+
+  - <span class="keyword">id</span>: <span class="string">verify-row-count</span>
+    <span class="keyword">preconditions</span>:
+      <span class="keyword">onFail</span>: <span class="string">HALT</span>
+      <span class="keyword">checks</span>:
+        - <span class="keyword">rowCount</span>:
+            <span class="keyword">tableName</span>: <span class="string">config</span>
+            <span class="keyword">expectedCount</span>: <span class="string">5</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"UPDATE config SET value = 'v2' WHERE key = 'version'"</span>
+
+  - <span class="keyword">id</span>: <span class="string">requires-property</span>
+    <span class="keyword">preconditions</span>:
+      <span class="keyword">onFail</span>: <span class="string">WARN</span>
+      <span class="keyword">checks</span>:
+        - <span class="keyword">changeLogPropertyDefined</span>: <span class="string">db.schema</span>
+    <span class="keyword">changes</span>:
+      - <span class="keyword">sql</span>: <span class="string">"CREATE SCHEMA ${db.schema}"</span></code></pre>
 </section>
 
 <!-- ROLLBACK -->
@@ -863,10 +905,55 @@ runner.update();</code></pre>
 <p>Implement <code>IChangelogResourceResolver</code> to provide custom resolution logic (e.g., loading from a database, remote URL, or encrypted store).</p>
 </section>
 
+<!-- CHANGELOG WRITING -->
+<section id="changelog-writing">
+<h2>Changelog Writing</h2>
+<p>The library can serialize changelog models back to any of the three formats. This enables programmatic changelog generation, format conversion, and round-trip testing.</p>
+
+<h3>Writer factory</h3>
+<p>Use <code>ChangelogWriterFactory</code> to obtain a writer by file extension:</p>
+<pre><code><span class="comment">// Get a writer by extension</span>
+<span class="type">IChangelogWriter</span> writer = <span class="type">ChangelogWriterFactory</span>.getInstance().getWriter(<span class="string">".db.yaml"</span>);
+
+<span class="comment">// Or use direct getter methods</span>
+<span class="type">IChangelogWriter</span> yamlWriter = <span class="type">ChangelogWriterFactory</span>.getInstance().getYamlWriter();
+<span class="type">IChangelogWriter</span> xmlWriter  = <span class="type">ChangelogWriterFactory</span>.getInstance().getXmlWriter();
+<span class="type">IChangelogWriter</span> jsonWriter = <span class="type">ChangelogWriterFactory</span>.getInstance().getJsonWriter();</code></pre>
+
+<h3>Writing a changelog</h3>
+<pre><code><span class="comment">// Build a changelog model programmatically</span>
+<span class="type">ChangelogColumnDefinition</span> idCol = <span class="keyword">new</span> <span class="type">ChangelogColumnDefinition</span>(<span class="string">"id"</span>, <span class="string">"INT"</span>);
+idCol.setPrimaryKey(<span class="keyword">true</span>).setNullable(<span class="keyword">false</span>);
+<span class="type">ChangelogColumnDefinition</span> nameCol = <span class="keyword">new</span> <span class="type">ChangelogColumnDefinition</span>(<span class="string">"name"</span>, <span class="string">"VARCHAR(100)"</span>);
+
+<span class="type">ChangelogChangeSet</span> cs = <span class="keyword">new</span> <span class="type">ChangelogChangeSet</span>(
+    <span class="keyword">new</span> <span class="type">ChangelogChangeSetIdentity</span>(<span class="string">"create-users"</span>, <span class="string">"admin"</span>, <span class="string">"schema.db.yaml"</span>),
+    <span class="type">List</span>.of(<span class="keyword">new</span> <span class="type">CreateTableChangelogEntry</span>(<span class="string">"users"</span>, <span class="type">List</span>.of(idCol, nameCol)))
+);
+
+<span class="type">IChangelog</span> changelog = <span class="keyword">new</span> <span class="type">Changelog</span>(<span class="string">"schema.db.yaml"</span>, <span class="type">List</span>.of(cs));
+
+<span class="comment">// Write to YAML</span>
+<span class="type">IChangelogWriter</span> writer = <span class="type">ChangelogWriterFactory</span>.getInstance().getYamlWriter();
+<span class="keyword">try</span> (<span class="type">OutputStream</span> out = <span class="keyword">new</span> <span class="type">FileOutputStream</span>(<span class="string">"schema.db.yaml"</span>)) {
+    writer.write(changelog, out);
+}</code></pre>
+
+<h3>Supported output formats</h3>
+<table>
+  <tr><th>Format</th><th>Extension</th><th>Implementation</th></tr>
+  <tr><td>YAML</td><td><code>.db.yaml</code> / <code>.db.yml</code></td><td>SnakeYAML (block style, 2-space indent)</td></tr>
+  <tr><td>XML</td><td><code>.db.xml</code></td><td>JDK StAX (no external dependency)</td></tr>
+  <tr><td>JSON</td><td><code>.db.json</code></td><td>Jackson (pretty-printed)</td></tr>
+</table>
+
+<p>All writers produce output compatible with the corresponding parser, enabling full round-trip: write a changelog, parse it back, and verify the model is identical.</p>
+</section>
+
 <!-- EXTERNAL FORMAT IMPORT -->
 <section id="external-format-import">
 <h2>External Format Import</h2>
-<p>The library can parse and import changelogs from external tools, allowing gradual migration to the DB-Changelog format.</p>
+<p>The library can parse and import changelogs from Liquibase and Flyway, allowing gradual migration to the DB-Changelog format.</p>
 
 <h3>Supported import formats</h3>
 <table>
@@ -887,26 +974,28 @@ CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(100));
 <span class="comment">--changeset john:add-email</span>
 ALTER TABLE users ADD COLUMN email VARCHAR(255);</code></pre>
 
-<h3>Format migration (planned)</h3>
-<p>A migration tool will convert external changelogs to the DB-Changelog format:</p>
-<pre><code><span class="comment">// Liquibase migration</span>
-<span class="type">IChangelogMigrator</span> migrator = <span class="type">ChangelogMigratorBuilder</span>.builder()
-    .sourceChangelog(<span class="string">"classpath:db/changelog/liquibase-master.xml"</span>)
-    .outputDirectory(<span class="string">"db/changelog/migrated/"</span>)
-    .outputFormat(<span class="string">"YAML"</span>)
-    .build();
-migrator.migrate();
+<h3>Format migration</h3>
+<p>The <code>IChangelogMigrator</code> interface converts external changelogs to the DB-Changelog format:</p>
 
-<span class="comment">// Flyway migration</span>
-<span class="type">IChangelogMigrator</span> migrator = <span class="type">ChangelogMigratorBuilder</span>.builder()
-    .flywayDirectory(<span class="string">"classpath:db/migration/"</span>)
-    .flywayHistoryTable(dataSource)
-    .outputDirectory(<span class="string">"db/changelog/migrated/"</span>)
-    .outputFormat(<span class="string">"YAML"</span>)
-    .build();
-migrator.migrate();</code></pre>
+<h4>Liquibase migration</h4>
+<pre><code><span class="comment">// Migrate a Liquibase changelog to YAML</span>
+<span class="type">IChangelogMigrator</span> migrator = <span class="type">ChangelogMigratorFactory</span>.getInstance()
+    .getLiquibaseMigrator(inputStream, <span class="string">"liquibase-master.xml"</span>, <span class="string">".db.yaml"</span>);
 
-<p>The Flyway migrator reads <code>V*__*.sql</code> files (versioned migrations), <code>R__*.sql</code> files (mapped to <code>runOnChange: true</code>), and the <code>flyway_schema_history</code> table to preserve applied state.</p>
+<span class="keyword">try</span> (<span class="type">OutputStream</span> out = <span class="keyword">new</span> <span class="type">FileOutputStream</span>(<span class="string">"migrated.db.yaml"</span>)) {
+    migrator.migrate(out);
+}</code></pre>
+
+<h4>Flyway migration</h4>
+<pre><code><span class="comment">// Migrate a directory of Flyway SQL files to YAML</span>
+<span class="type">IChangelogMigrator</span> migrator = <span class="type">ChangelogMigratorFactory</span>.getInstance()
+    .getFlywayMigrator(<span class="keyword">new</span> <span class="type">File</span>(<span class="string">"db/migration"</span>), <span class="string">".db.yaml"</span>);
+
+<span class="keyword">try</span> (<span class="type">OutputStream</span> out = <span class="keyword">new</span> <span class="type">FileOutputStream</span>(<span class="string">"migrated.db.yaml"</span>)) {
+    migrator.migrate(out);
+}</code></pre>
+
+<p>The Flyway migrator reads <code>V*__*.sql</code> files (versioned migrations) and <code>R__*.sql</code> files (mapped to <code>runOnChange: true</code>). Files are sorted by name: versioned first, then repeatable.</p>
 </section>
 
 <!-- COMPARISON -->
@@ -937,8 +1026,9 @@ migrator.migrate();</code></pre>
   <tr><td>Multiple changesets per file</td><td>Yes, individually tracked</td><td>No, one migration per file</td></tr>
   <tr><td>runAlways / runOnChange</td><td>Yes, per changeset</td><td>Repeatable only (R__ files)</td></tr>
   <tr><td>Context/Label filtering</td><td>Yes</td><td>No</td></tr>
+  <tr><td>Changelog writing</td><td>Write models to YAML, XML, JSON</td><td>No programmatic writing API</td></tr>
   <tr><td>Diff / generateChangelog</td><td>Planned</td><td>No</td></tr>
-  <tr><td>Import</td><td>Can read Flyway migration files</td><td>N/A (is the source)</td></tr>
+  <tr><td>Import</td><td>Can read and migrate Flyway SQL files</td><td>N/A (is the source)</td></tr>
 </table>
 
 </section>
@@ -987,7 +1077,7 @@ migrator.migrate();</code></pre>
     column/ table/ index/ constraint/ sequence/ view/ sql/ dml/ precondition/
   exception/                         <span class="comment"># Exception hierarchy</span>
   impl/                              <span class="comment"># All implementation details</span>
-    checksum/  executor/  lock/  parser/  resolver/  rollback/  sql/  tracking/  precondition/</code></pre>
+    checksum/  executor/  lock/  parser/  resolver/  rollback/  sql/  tracking/  precondition/  writer/  migrator/</code></pre>
 
 <h3>Design principles</h3>
 <ul>
@@ -1021,7 +1111,7 @@ migrator.migrate();</code></pre>
   <tr><td><code>DB2</code></td><td>db2_community/db2:11.5.9.0</td><td>Full support, slow container startup (2-5 min)</td></tr>
   <tr><td><code>Firebird</code></td><td>jacobalberty/firebird:v4.0</td><td>Full support via Jaybird JDBC driver</td></tr>
   <tr><td><code>TiDB</code></td><td>pingcap/tidb:v7.5.0</td><td>Full support, MySQL wire-compatible</td></tr>
-  <tr><td><code>YugabyteDB</code></td><td>yugabytedb/yugabyte:2024.1.3.0</td><td>Full support, PostgreSQL wire-compatible</td></tr>
+  <tr><td><code>YugabyteDB</code></td><td>yugabytedb/yugabyte:2.18.7.0</td><td>Full support, PostgreSQL wire-compatible</td></tr>
 </table>
 
 <p>Run integration tests with: <code>source cb --setenv &amp;&amp; cb -Pintegration</code></p>

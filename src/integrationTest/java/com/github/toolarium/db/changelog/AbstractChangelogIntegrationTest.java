@@ -59,7 +59,7 @@ public abstract class AbstractChangelogIntegrationTest {
     @Test
     void testUpdateAndHistory() throws Exception {
         IChangelogRunner runner = createRunner(
-                sqlChangeSet("it-1", "CREATE TABLE it_update_test (id INT PRIMARY KEY, name VARCHAR(100))"),
+                sqlChangeSet("it-1", "CREATE TABLE it_update_test (id INT NOT NULL PRIMARY KEY, name VARCHAR(100))"),
                 sqlChangeSet("it-2", "INSERT INTO it_update_test (id, name) VALUES (1, 'Integration')")
         );
 
@@ -88,7 +88,7 @@ public abstract class AbstractChangelogIntegrationTest {
     @Test
     void testUpdateIdempotent() throws Exception {
         IChangelogRunner runner = createRunner(
-                sqlChangeSet("it-idem-1", "CREATE TABLE it_idem_test (id INT PRIMARY KEY)")
+                sqlChangeSet("it-idem-1", "CREATE TABLE it_idem_test (id INT NOT NULL PRIMARY KEY)")
         );
 
         runner.update();
@@ -107,7 +107,7 @@ public abstract class AbstractChangelogIntegrationTest {
     void testRollbackByCount() throws Exception {
         IChangelogRunner runner = createRunner(
                 sqlChangeSetWithRollback("it-rb-1",
-                        "CREATE TABLE it_rb_test (id INT PRIMARY KEY)",
+                        "CREATE TABLE it_rb_test (id INT NOT NULL PRIMARY KEY)",
                         "DROP TABLE it_rb_test")
         );
 
@@ -128,10 +128,10 @@ public abstract class AbstractChangelogIntegrationTest {
     void testRollbackToTag() throws Exception {
         IChangelogRunner runner = createRunner(
                 sqlChangeSetWithRollback("it-tag-1",
-                        "CREATE TABLE it_tag_test (id INT PRIMARY KEY)",
+                        "CREATE TABLE it_tag_test (id INT NOT NULL PRIMARY KEY)",
                         "DROP TABLE it_tag_test"),
                 sqlChangeSetWithRollback("it-tag-2",
-                        "CREATE TABLE it_tag_extra (id INT PRIMARY KEY)",
+                        "CREATE TABLE it_tag_extra (id INT NOT NULL PRIMARY KEY)",
                         "DROP TABLE it_tag_extra")
         );
 
@@ -154,7 +154,7 @@ public abstract class AbstractChangelogIntegrationTest {
     @Test
     void testSync() throws Exception {
         IChangelogRunner runner = createRunner(
-                sqlChangeSet("it-sync-1", "CREATE TABLE it_sync_test (id INT PRIMARY KEY)")
+                sqlChangeSet("it-sync-1", "CREATE TABLE it_sync_test (id INT NOT NULL PRIMARY KEY)")
         );
 
         runner.sync();
@@ -173,7 +173,7 @@ public abstract class AbstractChangelogIntegrationTest {
     @Test
     void testValidate() throws Exception {
         IChangelogRunner runner = createRunner(
-                sqlChangeSet("it-val-1", "CREATE TABLE it_val_test (id INT PRIMARY KEY)")
+                sqlChangeSet("it-val-1", "CREATE TABLE it_val_test (id INT NOT NULL PRIMARY KEY)")
         );
 
         runner.update();
@@ -189,7 +189,7 @@ public abstract class AbstractChangelogIntegrationTest {
     @Test
     void testClearChecksums() throws Exception {
         IChangelogRunner runner = createRunner(
-                sqlChangeSet("it-clear-1", "CREATE TABLE it_clear_test (id INT PRIMARY KEY)")
+                sqlChangeSet("it-clear-1", "CREATE TABLE it_clear_test (id INT NOT NULL PRIMARY KEY)")
         );
 
         runner.update();
@@ -210,7 +210,7 @@ public abstract class AbstractChangelogIntegrationTest {
     void testGenerateRollbackSql() throws Exception {
         IChangelogRunner runner = createRunner(
                 sqlChangeSetWithRollback("it-dry-1",
-                        "CREATE TABLE it_dry_test (id INT PRIMARY KEY)",
+                        "CREATE TABLE it_dry_test (id INT NOT NULL PRIMARY KEY)",
                         "DROP TABLE it_dry_test")
         );
 
@@ -260,8 +260,8 @@ public abstract class AbstractChangelogIntegrationTest {
     @Test
     void testDeploymentIdGrouping() throws Exception {
         IChangelogRunner runner = createRunner(
-                sqlChangeSet("it-deploy-1", "CREATE TABLE it_deploy_test1 (id INT PRIMARY KEY)"),
-                sqlChangeSet("it-deploy-2", "CREATE TABLE it_deploy_test2 (id INT PRIMARY KEY)")
+                sqlChangeSet("it-deploy-1", "CREATE TABLE it_deploy_test1 (id INT NOT NULL PRIMARY KEY)"),
+                sqlChangeSet("it-deploy-2", "CREATE TABLE it_deploy_test2 (id INT NOT NULL PRIMARY KEY)")
         );
 
         runner.update();

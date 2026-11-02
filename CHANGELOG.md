@@ -7,67 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [ 0.8.0 ] - 2026-11-02
 ### Added
-- Core changelog runner with update, tag, sync, status, history, and clearChecksums operations.
-- SHA 256 based checksum generation for changesets.
+- Core changelog runner with update, rollback, tag, sync, validate, status, history, and clearChecksums.
+- SHA 256 checksum generation for changesets.
 - JDBC tracking table (`DB_CHANGELOG`) with auto-creation.
-- Changelog parsing for DB-Changelog YAML (`.db.yaml`), XML (`.db.xml`), and JSON (`.db.json`) formats.
-- External SQL changelog format import (`.sql` with `--changeset` directives).
-- Property substitution (`${property}`) in changelogs.
-- Include/includeAll resolution for composing changelogs from multiple files.
-- Parser factory with automatic format detection by file extension.
-- Structured DDL change types: createTable, dropTable, addColumn, dropColumn, createIndex, dropIndex, renameTable, renameColumn, modifyColumn.
-- Constraint change types: addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull.
-- Sequence change types: createSequence, dropSequence.
-- View change types: createView, dropView.
-- DML change types: insert, update, delete, tagDatabase.
-- Auto-rollback generation for structured DDL changes.
-- Generic ANSI SQL generator for all DDL change types with SQL identifier validation.
-- Level 1 SQL rollback generator: auto-generates rollback for common raw SQL DDL patterns.
-- Rollback engine: rollback by count, tag, or date with resilient error handling.
-- Rollback priority: manual rollback entries, auto-rollback, Level 1 SQL rollback.
-- Dry-run rollback via `generateRollbackSql()`.
-- Preconditions: dbms, tableExists, columnExists, indexExists, viewExists, sequenceExists, foreignKeyExists, primaryKeyExists, sqlCheck, changeSetExecuted, runningAs.
-- Precondition logical combinators: and, or, not.
-- Precondition failure actions: HALT, WARN, CONTINUE, MARK_RAN.
-- Preconditions integrated into execution engine with configurable failure actions.
-- Precondition parsing from YAML changelogs.
-- `IChangelogContext` interface for runtime execution context (active contexts and labels).
+- Native changelog formats: `.db.yaml`, `.db.xml`, `.db.json` with property substitution and include resolution.
+- Structured DDL: createTable, dropTable, addColumn, dropColumn, createIndex, dropIndex, renameTable, renameColumn, modifyColumn.
+- Constraints: addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull.
+- Sequences: createSequence, dropSequence. Views: createView, dropView.
+- DML: insert, update, delete, tagDatabase, setTableRemarks, setColumnRemarks, loadData, loadUpdateData.
+- Auto-rollback for structured DDL changes, Level 1 SQL rollback for raw SQL patterns.
+- Rollback by count, tag, or date. Dry-run via `generateRollbackSql()`.
+- Preconditions: dbms, tableExists, columnExists, indexExists, viewExists, sequenceExists, foreignKeyExists, primaryKeyExists, sqlCheck, changeSetExecuted, runningAs, tableIsEmpty, rowCount, changeLogPropertyDefined.
+- Precondition combinators (and, or, not) with HALT, WARN, CONTINUE, MARK_RAN failure actions.
 - Context and label filtering for conditional changeset execution.
-- Sync operation: mark all pending changesets as executed without running.
-- Support for runAlways, runOnChange, and failOnError changeset attributes.
-- Distributed locking via `toolarium-leader-election` with DATABASE strategy and configurable timeout.
-- No-op lock fallback for single-instance deployments.
-- Builder-based configuration via `ChangelogRunnerBuilder`.
-- SQL identifier validation for table and lock table names.
-- Changeset identity validation (rejects `|` separator character in id and author).
-- Safe YAML parsing via SnakeYAML `SafeConstructor` (prevents arbitrary class instantiation).
-- XXE protection for XML changelog parsing.
-- SQL statement execution timeout (default 300 seconds).
-- SQL default value escaping to prevent injection.
-- Safe regex handling for SQL statement splitting.
-- Resilient lock release with suppressed exception handling.
-- DataSource validation before database operations.
-- Validate operation: check for checksum mismatches without executing changes.
-- `filePath` attribute on changesets to override the resource location in the identity.
-- `ChangelogSnapshotPolicy` (AUTO, DDL, ALL, NONE) for future rollback snapshot support.
-- `ChangelogRollbackPolicy` (WARN, FAIL, IGNORE) for controlling behavior when no rollback is available.
-- `ChangelogObjectQuotingStrategy` (NONE, QUOTE_ALL) for SQL identifier quoting.
-- `IChangelogResourceResolver` for unified changelog file resolution across classpath, JARs, and file system.
-- Pluggable resource resolver via builder or constructor injection.
-- Resource resolution uses `toolarium-common` ClassPathUtil and FileUtil for path normalization and classpath scanning.
-- External YAML changelog format import (`.yaml` / `.yml` with `databaseChangeLog` root key).
-- External XML changelog format import (`.xml` with `changeSet` elements).
-- External JSON changelog format import (`.json` with `databaseChangeLog` root key).
-- `IChangelogSnapshotManager` for pre-execution metadata snapshots with `DB_CHANGELOG_SNAPSHOT` table.
-- DML change types: setTableRemarks, setColumnRemarks, loadData, loadUpdateData.
-- `ICustomChangelogEntry` interface for user-provided migration logic (execute, rollback, description).
-- `CustomChangelogEntry` wrapper to use custom changes inside changesets.
-- Integration test framework with abstract base test class and shared test scenarios.
-- Integration tests: H2 (embedded), PostgreSQL, MySQL, MariaDB, SQL Server, Oracle (via Testcontainers).
-- Run with `source cb --setenv && cb -Pintegration` to execute integration tests.
-- `customChange` parsing from YAML/XML/JSON changelogs using `toolarium-common` ClassInstanceUtil for class instantiation.
-- Executor support for `CustomChangelogEntry` execution and rollback.
-- Public API interfaces moved to root package (`IChangelogTracker`, `IChangelogExecutor`, `IChangelogLock`, `IChangelogChecksumGenerator`, `IChangelogResourceResolver`).
-- All builder methods support pluggable interface implementations (tracker, executor, lock, checksumGenerator, resourceResolver).
-- Database-portable DDL: TIMESTAMP/DATETIME detection per database, MySQL-compatible subqueries, Oracle-compatible alias syntax.
-- `ChangelogDatabaseTypeUtil` for database-specific type resolution.
+- Distributed locking via `toolarium-leader-election` (DATABASE strategy, no-op fallback).
+- Builder-based configuration via `ChangelogRunnerBuilder` with pluggable interfaces.
+- Security: SQL identifier validation, safe YAML (SafeConstructor), XXE protection, statement timeouts, default value escaping, path normalization.
+- `IChangelogResourceResolver` for unified resolution across classpath, JARs, and file system.
+- `ICustomChangelogEntry` for user-provided migration logic.
+- `IChangelogSnapshotManager` for pre-execution metadata snapshots (`DB_CHANGELOG_SNAPSHOT`).
+- Liquibase changelog import (XML, YAML, JSON, SQL with `--changeset` directives).
+- Flyway SQL import (`V*__*.sql` versioned, `R__*.sql` repeatable migrations).
+- Format migration via `IChangelogMigrator` to convert Liquibase and Flyway changelogs to native format.
+- Changelog writers (`IChangelogWriter`) for serializing models to YAML, XML, and JSON with round-trip support.
+- Property resolution via toolarium-common `PropertyExpander` (changelog properties, system properties, environment variables).
+- Database-portable DDL with automatic database detection and adaptation.
+- Integration tested across 14 databases: H2, HSQLDB, Derby, SQLite, PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, CockroachDB, DB2, Firebird, TiDB, YugabyteDB.

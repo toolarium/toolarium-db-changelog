@@ -14,9 +14,11 @@ An open-source Java library for automated database schema migrations and rollbac
 - **Structured DDL changes**: createTable, dropTable, addColumn, dropColumn, renameTable, renameColumn, modifyColumn, createIndex, dropIndex with auto-rollback
 - **Constraints**: addPrimaryKey, dropPrimaryKey, addForeignKey, dropForeignKey, addUniqueConstraint, dropUniqueConstraint, addNotNull, dropNotNull
 - **Sequences and views**: createSequence, dropSequence, createView, dropView
-- **Preconditions**: dbms, tableExists, columnExists, sqlCheck, and/or/not combinators with HALT/WARN/CONTINUE/MARK_RAN
+- **Preconditions**: dbms, tableExists, columnExists, tableIsEmpty, rowCount, changeLogPropertyDefined, sqlCheck, and/or/not combinators with HALT/WARN/CONTINUE/MARK_RAN
 - **Own changelog format**: clean `.db.yaml`, `.db.xml`, and `.db.json` with property substitution
-- **External format import**: parse external changelog formats (XML, YAML, JSON, SQL) for migration compatibility
+- **Property resolution**: `${name}` from changelog properties, system properties, and environment variables via toolarium-common `PropertyExpander`
+- **External format import**: parse Liquibase (XML, YAML, JSON, SQL) and Flyway (`V*__*.sql`, `R__*.sql`) changelogs
+- **Format migration**: convert Liquibase and Flyway changelogs to `.db.yaml`/`.db.xml`/`.db.json` via `IChangelogMigrator`
 - **Pre-execution snapshots**: `DB_CHANGELOG_SNAPSHOT` table for capturing table metadata before changes
 - **Distributed locking**: via [toolarium-leader-election](https://github.com/toolarium/toolarium-leader-election) (self-healing, no stale locks)
 - **SHA-256 checksums**: stable algorithm, no version prefix
@@ -27,6 +29,7 @@ An open-source Java library for automated database schema migrations and rollbac
 - **Rollback automation**: auto-rollback for DDL, Level 1 SQL rollback generator for raw SQL, dry-run via `generateRollbackSql()`
 - **Resilient rollback**: continues on partial failure, reports all errors
 - **Configurable policies**: snapshot policy, rollback policy, object quoting strategy
+- **Changelog writing**: serialize changelog models to `.db.yaml`, `.db.xml`, and `.db.json` via `IChangelogWriter` with round-trip support
 - **Pluggable resource resolver**: unified resolution across classpath, JARs, and file system via `IChangelogResourceResolver`
 - **Security hardened**: SQL identifier validation, XXE protection, safe YAML deserialization, statement timeouts
 - **14 tested databases**: H2, HSQLDB, Derby, SQLite (embedded), PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, CockroachDB, DB2, Firebird, TiDB, YugabyteDB
@@ -248,10 +251,36 @@ IChangelogRunner runner = ChangelogRunnerBuilder.builder()
 
 | Format | Extension | Description |
 |---|---|---|
-| DB-Changelog YAML | `.db.yaml` / `.db.yml` | Recommended native format |
-| DB-Changelog XML | `.db.xml` | Native XML format |
-| DB-Changelog JSON | `.db.json` | Native JSON format |
+| DB-Changelog YAML | `.db.yaml` / `.db.yml` | Recommended format |
+| DB-Changelog XML | `.db.xml` | XML format |
+| DB-Changelog JSON | `.db.json` | JSON format |
 | External SQL | `.sql` | Formatted SQL with `--changeset` directives |
+
+
+## Writing changelogs programmatically
+
+```java
+// Build a changelog model
+Changelog changelog = new Changelog("output.db.yaml", List.of(
+    new ChangelogChangeSet(
+        new ChangelogChangeSetIdentity("create-users", "admin", "output.db.yaml"),
+        List.of(new CreateTableChangelogEntry("users", List.of(
+            new ChangelogColumnDefinition("id", "INT"),
+            new ChangelogColumnDefinition("name", "VARCHAR(100)")
+        )))
+    )
+));
+
+// Write to YAML
+IChangelogWriter writer = ChangelogWriterFactory.getInstance().getYamlWriter();
+try (OutputStream out = new FileOutputStream("output.db.yaml")) {
+    writer.write(changelog, out);
+}
+
+// Write to JSON or XML
+ChangelogWriterFactory.getInstance().getWriter(".db.json").write(changelog, outputStream);
+ChangelogWriterFactory.getInstance().getWriter(".db.xml").write(changelog, outputStream);
+```
 
 
 ## Built With

@@ -6,6 +6,7 @@
 package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
 import com.github.toolarium.common.util.EnumUtil;
+import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
@@ -18,11 +19,14 @@ import com.github.toolarium.db.changelog.model.ChangelogChangeSetIdentity;
 import com.github.toolarium.db.changelog.model.IChangelog;
 import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.model.IChangelogEntry;
+import com.github.toolarium.db.changelog.model.precondition.ChangeLogPropertyDefinedPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.ChangelogPreconditionContainer;
 import com.github.toolarium.db.changelog.model.precondition.ChangelogPreconditionFailureAction;
 import com.github.toolarium.db.changelog.model.precondition.DbmsPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.IChangelogPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.RowCountPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.TableExistsPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.TableIsEmptyPrecondition;
 import com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,13 +43,13 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 
 /**
- * Parses the native DB-Changelog YAML format (.db.yaml).
+ * Parses the DB-Changelog YAML format (.db.yaml).
  *
  * @author patrick
  */
 public class YamlChangelogParser implements IChangelogParser {
     private static final Logger LOG = LoggerFactory.getLogger(YamlChangelogParser.class);
-    private static final String FORMAT_PREFIX = "toolarium-db-changelog/";
+    private static final String FORMAT_PREFIX = ChangelogConfiguration.FORMAT_PREFIX;
     private static final String BRACKET_DOT = "].";
 
 
@@ -106,7 +110,7 @@ public class YamlChangelogParser implements IChangelogParser {
      */
     @Override
     public boolean supports(String fileExtension) {
-        return ".db.yaml".equals(fileExtension) || ".db.yml".equals(fileExtension);
+        return ChangelogConfiguration.FILE_EXTENSION_DB_YAML.equals(fileExtension) || ChangelogConfiguration.FILE_EXTENSION_DB_YML.equals(fileExtension);
     }
 
 
@@ -294,6 +298,20 @@ public class YamlChangelogParser implements IChangelogParser {
                 }
                 if (checkMap.containsKey("tableExists")) {
                     checks.add(new TableExistsPrecondition(checkMap.get("tableExists").toString()));
+                }
+                if (checkMap.containsKey("tableIsEmpty")) {
+                    checks.add(new TableIsEmptyPrecondition(checkMap.get("tableIsEmpty").toString()));
+                }
+                if (checkMap.containsKey("rowCount")) {
+                    Map<String, Object> rcMap = ChangelogParserUtil.getInstance().mapOf(checkMap.get("rowCount"));
+                    if (rcMap != null) {
+                        String rcTable = rcMap.get("tableName").toString();
+                        int rcExpected = Integer.parseInt(rcMap.get("expectedCount").toString());
+                        checks.add(new RowCountPrecondition(rcTable, rcExpected));
+                    }
+                }
+                if (checkMap.containsKey("changeLogPropertyDefined")) {
+                    checks.add(new ChangeLogPropertyDefinedPrecondition(checkMap.get("changeLogPropertyDefined").toString()));
                 }
             }
         }

@@ -25,6 +25,24 @@ public class ChangelogConfiguration {
     /** Default lock table name. */
     public static final String DEFAULT_LOCK_TABLE = "DB_CHANGELOG_LOCK";
 
+    /** File extension for the YAML changelog format. */
+    public static final String FILE_EXTENSION_DB_YAML = ".db.yaml";
+
+    /** Alternative file extension for the YAML changelog format. */
+    public static final String FILE_EXTENSION_DB_YML = ".db.yml";
+
+    /** File extension for the nave XML changelog format. */
+    public static final String FILE_EXTENSION_DB_XML = ".db.xml";
+
+    /** File extension for the JSON changelog format. */
+    public static final String FILE_EXTENSION_DB_JSON = ".db.json";
+
+    /** Format prefix for the changelog format marker. */
+    public static final String FORMAT_PREFIX = "toolarium-db-changelog/";
+
+    /** Current format version for the changelog format marker. */
+    public static final String FORMAT_VERSION = FORMAT_PREFIX + "1.0";
+
     private DataSource dataSource;
     private String changelogPath;
     private String trackingTableName;

@@ -5,27 +5,40 @@
  */
 package com.github.toolarium.db.changelog.impl.resolver.impl;
 
+import com.github.toolarium.common.util.PropertyExpander;
+import com.github.toolarium.common.util.PropertyExpanderContextBasedProperties;
 import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
-import java.util.LinkedHashMap;
+import java.io.InputStream;
 import java.util.Map;
+import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
- * Default implementation of parameter resolution using a simple map-based lookup.
+ * Default implementation of parameter resolution using toolarium-common PropertyExpander.
+ *
+ * <p>Resolves <code>${name}</code> placeholders in this order:
+ * <ol>
+ *   <li>Changelog-defined properties (set via {@link #setProperty(String, String)} or YAML properties block)</li>
+ *   <li>System properties</li>
+ *   <li>Environment variables</li>
+ * </ol>
+ * Properties files can be loaded via {@link #loadProperties(InputStream)}.
+ * This class is not thread-safe. Each parser or migrator creates its own instance.</p>
  *
  * @author patrick
  */
 public class ChangelogParameterResolverImpl implements IChangelogParameterResolver {
-    private static final String PLACEHOLDER_PREFIX = "${";
-    private static final String PLACEHOLDER_SUFFIX = "}";
-    private final Map<String, String> properties;
+    private static final Logger LOG = LoggerFactory.getLogger(ChangelogParameterResolverImpl.class);
+    private final Properties properties;
 
 
     /**
      * Constructor for ChangelogParameterResolverImpl
      */
     public ChangelogParameterResolverImpl() {
-        this.properties = new LinkedHashMap<>();
+        this.properties = new Properties();
     }
 
 
@@ -35,7 +48,10 @@ public class ChangelogParameterResolverImpl implements IChangelogParameterResolv
      * @param properties the initial properties
      */
     public ChangelogParameterResolverImpl(Map<String, String> properties) {
-        this.properties = new LinkedHashMap<>(properties);
+        this.properties = new Properties();
+        if (properties != null) {
+            this.properties.putAll(properties);
+        }
     }
 
 
@@ -44,17 +60,27 @@ public class ChangelogParameterResolverImpl implements IChangelogParameterResolv
      */
     @Override
     public String resolve(String value) {
-        if (value == null || !value.contains(PLACEHOLDER_PREFIX)) {
-            return value;
+        if (value == null) {
+            return null;
         }
 
-        String result = value;
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
-            String placeholder = PLACEHOLDER_PREFIX + entry.getKey() + PLACEHOLDER_SUFFIX;
-            result = result.replace(placeholder, entry.getValue());
-        }
+        Properties previous = PropertyExpanderContextBasedProperties.get();
+        try {
+            Properties merged = new Properties();
+            if (previous != null) {
+                merged.putAll(previous);
+            }
+            merged.putAll(properties);
+            PropertyExpanderContextBasedProperties.set(merged);
 
-        return result;
+            return PropertyExpander.getInstance().expand(value);
+        } finally {
+            if (previous == null) {
+                PropertyExpanderContextBasedProperties.unset();
+            } else {
+                PropertyExpanderContextBasedProperties.set(previous);
+            }
+        }
     }
 
 
@@ -63,7 +89,7 @@ public class ChangelogParameterResolverImpl implements IChangelogParameterResolv
      */
     @Override
     public void setProperty(String name, String value) {
-        properties.put(name, value);
+        properties.setProperty(name, value);
     }
 
 
@@ -72,6 +98,40 @@ public class ChangelogParameterResolverImpl implements IChangelogParameterResolv
      */
     @Override
     public boolean hasProperty(String name) {
-        return properties.containsKey(name);
+        if (properties.containsKey(name)) {
+            return true;
+        }
+        if (System.getProperty(name) != null) {
+            return true;
+        }
+        if (System.getenv(name) != null) {
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Load properties from an input stream (Java properties file format).
+     * The caller is responsible for closing the input stream.
+     *
+     * @param input the input stream
+     * @throws IllegalStateException if the properties cannot be loaded
+     */
+    public void loadProperties(InputStream input) {
+        try {
+            Properties props = new Properties();
+            props.load(input);
+            properties.putAll(props);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Loaded " + props.size() + " property(s) from input stream.");
+            }
+        } catch (Exception e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Failed to load properties: " + e.getMessage(), e);
+            }
+            throw new IllegalStateException("Failed to load changelog properties.", e);
+        }
     }
 }

@@ -5,6 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
+import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
@@ -32,13 +33,13 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Parses the native DB-Changelog XML format (.db.xml) using StAX.
+ * Parses the DB-Changelog XML format (.db.xml) using StAX.
  *
  * @author patrick
  */
 public class XmlChangelogParser implements IChangelogParser {
     private static final Logger LOG = LoggerFactory.getLogger(XmlChangelogParser.class);
-    private static final String FORMAT_PREFIX = "toolarium-db-changelog/";
+    private static final String FORMAT_PREFIX = ChangelogConfiguration.FORMAT_PREFIX;
     private static final String ELEMENT_DB_CHANGELOG = "dbChangelog";
     private static final String ELEMENT_CHANGE_SET = "changeSet";
     private static final String ELEMENT_PROPERTY = "property";
@@ -120,7 +121,7 @@ public class XmlChangelogParser implements IChangelogParser {
      */
     @Override
     public boolean supports(String fileExtension) {
-        return ".db.xml".equals(fileExtension);
+        return ChangelogConfiguration.FILE_EXTENSION_DB_XML.equals(fileExtension);
     }
 
 

@@ -7,6 +7,7 @@ package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.toolarium.db.changelog.config.ChangelogConfiguration;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
 import com.github.toolarium.db.changelog.impl.parser.util.ChangelogEntryParserUtil;
@@ -28,13 +29,13 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Parses the native DB-Changelog JSON format (.db.json) using Jackson.
+ * Parses the DB-Changelog JSON format (.db.json) using Jackson.
  *
  * @author patrick
  */
 public class JsonChangelogParser implements IChangelogParser {
     private static final Logger LOG = LoggerFactory.getLogger(JsonChangelogParser.class);
-    private static final String FORMAT_PREFIX = "toolarium-db-changelog/";
+    private static final String FORMAT_PREFIX = ChangelogConfiguration.FORMAT_PREFIX;
     private final ObjectMapper objectMapper;
 
 
@@ -89,7 +90,7 @@ public class JsonChangelogParser implements IChangelogParser {
      */
     @Override
     public boolean supports(String fileExtension) {
-        return ".db.json".equals(fileExtension);
+        return ChangelogConfiguration.FILE_EXTENSION_DB_JSON.equals(fileExtension);
     }
 
 

@@ -6,16 +6,20 @@
 package com.github.toolarium.db.changelog.impl.precondition.impl;
 
 import com.github.toolarium.db.changelog.impl.precondition.IChangelogPreconditionEvaluator;
+import com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver;
 import com.github.toolarium.db.changelog.model.precondition.AndPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.ChangeLogPropertyDefinedPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.ColumnExistsPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.DbmsPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.IChangelogPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.IndexExistsPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.NotPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.OrPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.RowCountPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.SequenceExistsPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.SqlCheckPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.TableExistsPrecondition;
+import com.github.toolarium.db.changelog.model.precondition.TableIsEmptyPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.ViewExistsPrecondition;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -33,6 +37,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditionEvaluator {
     private static final Logger LOG = LoggerFactory.getLogger(ChangelogPreconditionEvaluatorImpl.class);
+    private volatile IChangelogParameterResolver parameterResolver;
 
 
     /**
@@ -48,6 +53,16 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
             }
             return false;
         }
+    }
+
+
+    /**
+     * Set the parameter resolver for evaluating changeLogPropertyDefined preconditions.
+     *
+     * @param parameterResolver the parameter resolver
+     */
+    public void setParameterResolver(IChangelogParameterResolver parameterResolver) {
+        this.parameterResolver = parameterResolver;
     }
 
 
@@ -80,6 +95,15 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
         }
         if (precondition instanceof SqlCheckPrecondition) {
             return evaluateSqlCheck((SqlCheckPrecondition) precondition, connection);
+        }
+        if (precondition instanceof TableIsEmptyPrecondition) {
+            return evaluateTableIsEmpty((TableIsEmptyPrecondition) precondition, connection);
+        }
+        if (precondition instanceof RowCountPrecondition) {
+            return evaluateRowCount((RowCountPrecondition) precondition, connection);
+        }
+        if (precondition instanceof ChangeLogPropertyDefinedPrecondition) {
+            return evaluateChangeLogPropertyDefined((ChangeLogPropertyDefinedPrecondition) precondition);
         }
         if (precondition instanceof AndPrecondition) {
             return evaluateAnd((AndPrecondition) precondition, connection);
@@ -128,9 +152,12 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
      */
     private boolean evaluateTableExists(TableExistsPrecondition precondition, Connection connection) throws SQLException {
         DatabaseMetaData meta = connection.getMetaData();
-        try (ResultSet rs = meta.getTables(null, null, "%", new String[]{"TABLE"})) {
-            while (rs.next()) {
-                if (precondition.getTableName().equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
+        String name = precondition.getTableName();
+        // Try exact case, uppercase, and lowercase to handle database-specific identifier storage
+        String[] candidates = {name, name.toUpperCase(), name.toLowerCase()};
+        for (String candidate : candidates) {
+            try (ResultSet rs = meta.getTables(null, null, candidate, new String[]{"TABLE"})) {
+                if (rs.next()) {
                     return true;
                 }
             }
@@ -149,11 +176,16 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
      */
     private boolean evaluateColumnExists(ColumnExistsPrecondition precondition, Connection connection) throws SQLException {
         DatabaseMetaData meta = connection.getMetaData();
-        try (ResultSet rs = meta.getColumns(null, null, "%", "%")) {
-            while (rs.next()) {
-                if (precondition.getTableName().equalsIgnoreCase(rs.getString("TABLE_NAME"))
-                        && precondition.getColumnName().equalsIgnoreCase(rs.getString("COLUMN_NAME"))) {
-                    return true;
+        String tableName = precondition.getTableName();
+        String columnName = precondition.getColumnName();
+        String[] tableCandidates = {tableName, tableName.toUpperCase(), tableName.toLowerCase()};
+        String[] columnCandidates = {columnName, columnName.toUpperCase(), columnName.toLowerCase()};
+        for (String tbl : tableCandidates) {
+            for (String col : columnCandidates) {
+                try (ResultSet rs = meta.getColumns(null, null, tbl, col)) {
+                    if (rs.next()) {
+                        return true;
+                    }
                 }
             }
         }
@@ -170,12 +202,37 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
      * @throws SQLException on error
      */
     private boolean evaluateIndexExists(IndexExistsPrecondition precondition, Connection connection) throws SQLException {
-        DatabaseMetaData meta = connection.getMetaData();
-        try (ResultSet rs = meta.getIndexInfo(null, null, "%", false, true)) {
-            while (rs.next()) {
-                String indexName = rs.getString("INDEX_NAME");
-                if (indexName != null && precondition.getIndexName().equalsIgnoreCase(indexName)) {
+        // Use INFORMATION_SCHEMA query for index lookup (avoids wildcard getIndexInfo which many drivers reject)
+        String sql = "SELECT 1 FROM INFORMATION_SCHEMA.INDEXES WHERE INDEX_NAME = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, precondition.getIndexName().toUpperCase());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
                     return true;
+                }
+            }
+        } catch (SQLException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Index lookup via INFORMATION_SCHEMA failed, trying metadata: " + e.getMessage(), e);
+            }
+        }
+
+        // Fallback: try metadata with all tables via catalog scan
+        DatabaseMetaData meta = connection.getMetaData();
+        try (ResultSet tables = meta.getTables(null, null, "%", new String[]{"TABLE"})) {
+            while (tables.next()) {
+                String tbl = tables.getString("TABLE_NAME");
+                try (ResultSet rs = meta.getIndexInfo(null, null, tbl, false, true)) {
+                    while (rs.next()) {
+                        String indexName = rs.getString("INDEX_NAME");
+                        if (indexName != null && precondition.getIndexName().equalsIgnoreCase(indexName)) {
+                            return true;
+                        }
+                    }
+                } catch (SQLException ex) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Index lookup failed for table [" + tbl + "]: " + ex.getMessage(), ex);
+                    }
                 }
             }
         }
@@ -193,9 +250,11 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
      */
     private boolean evaluateViewExists(ViewExistsPrecondition precondition, Connection connection) throws SQLException {
         DatabaseMetaData meta = connection.getMetaData();
-        try (ResultSet rs = meta.getTables(null, null, "%", new String[]{"VIEW"})) {
-            while (rs.next()) {
-                if (precondition.getViewName().equalsIgnoreCase(rs.getString("TABLE_NAME"))) {
+        String name = precondition.getViewName();
+        String[] candidates = {name, name.toUpperCase(), name.toLowerCase()};
+        for (String candidate : candidates) {
+            try (ResultSet rs = meta.getTables(null, null, candidate, new String[]{"VIEW"})) {
+                if (rs.next()) {
                     return true;
                 }
             }
@@ -237,14 +296,77 @@ public class ChangelogPreconditionEvaluatorImpl implements IChangelogPreconditio
      * @throws SQLException on error
      */
     private boolean evaluateSqlCheck(SqlCheckPrecondition precondition, Connection connection) throws SQLException {
-        try (PreparedStatement stmt = connection.prepareStatement(precondition.getSql());
+        boolean wasReadOnly = connection.isReadOnly();
+        try {
+            connection.setReadOnly(true);
+            try (PreparedStatement stmt = connection.prepareStatement(precondition.getSql());
+                 ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String result = rs.getString(1);
+                    return precondition.getExpectedResult().equals(result);
+                }
+            }
+        } finally {
+            connection.setReadOnly(wasReadOnly);
+        }
+        return false;
+    }
+
+
+    /**
+     * Evaluate tableIsEmpty precondition.
+     *
+     * @param precondition the precondition
+     * @param connection the connection
+     * @return true if the table has zero rows
+     * @throws SQLException on error
+     */
+    private boolean evaluateTableIsEmpty(TableIsEmptyPrecondition precondition, Connection connection) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM " + precondition.getTableName();
+        try (PreparedStatement stmt = connection.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
             if (rs.next()) {
-                String result = rs.getString(1);
-                return precondition.getExpectedResult().equals(result);
+                return rs.getLong(1) == 0;
             }
         }
         return false;
+    }
+
+
+    /**
+     * Evaluate rowCount precondition.
+     *
+     * @param precondition the precondition
+     * @param connection the connection
+     * @return true if the row count matches expected
+     * @throws SQLException on error
+     */
+    private boolean evaluateRowCount(RowCountPrecondition precondition, Connection connection) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM " + precondition.getTableName();
+        try (PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                return rs.getLong(1) == precondition.getExpectedCount();
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Evaluate changeLogPropertyDefined precondition.
+     *
+     * @param precondition the precondition
+     * @return true if the property is defined
+     */
+    private boolean evaluateChangeLogPropertyDefined(ChangeLogPropertyDefinedPrecondition precondition) {
+        if (parameterResolver == null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No parameter resolver set for changeLogPropertyDefined precondition.");
+            }
+            return false;
+        }
+        return parameterResolver.hasProperty(precondition.getPropertyName());
     }
 
 

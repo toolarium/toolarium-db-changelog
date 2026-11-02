@@ -97,7 +97,7 @@ public final class ChangelogParserFactory {
      * Register the default parsers.
      */
     private void registerDefaultParsers() {
-        // DB-Changelog native format parsers
+        // DB-Changelog format parsers
         parsers.add(new YamlChangelogParser());
         parsers.add(new XmlChangelogParser());
         parsers.add(new JsonChangelogParser());
