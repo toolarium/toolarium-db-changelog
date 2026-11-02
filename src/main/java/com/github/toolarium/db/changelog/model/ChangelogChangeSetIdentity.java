@@ -26,6 +26,8 @@ public class ChangelogChangeSetIdentity implements IChangelogChangeSetIdentity {
      * @param filepath the file path
      */
     public ChangelogChangeSetIdentity(String id, String author, String filepath) {
+        validateNoSeparator(id, "id");
+        validateNoSeparator(author, "author");
         this.id = id;
         this.author = author;
         this.filepath = filepath;
@@ -89,6 +91,20 @@ public class ChangelogChangeSetIdentity implements IChangelogChangeSetIdentity {
      */
     @Override
     public String toString() {
-        return id + "::" + author + "::" + filepath;
+        return id + "|" + author + "|" + filepath;
+    }
+
+
+    /**
+     * Validate that a value does not contain the key separator character.
+     *
+     * @param value the value to validate
+     * @param name the field name for error messages
+     * @throws IllegalArgumentException if the value contains the separator
+     */
+    private static void validateNoSeparator(String value, String name) {
+        if (value != null && value.contains("|")) {
+            throw new IllegalArgumentException(name + " must not contain the '|' character: " + value);
+        }
     }
 }

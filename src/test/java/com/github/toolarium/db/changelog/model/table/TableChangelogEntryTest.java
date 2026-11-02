@@ -94,4 +94,42 @@ public class TableChangelogEntryTest {
         assertEquals(e1.hashCode(), e2.hashCode());
         assertNotEquals(e1, e3);
     }
+
+
+    /**
+     * Test RenameTableChangelogEntry.
+     */
+    @Test
+    void testRenameTable() {
+        RenameTableChangelogEntry entry = new RenameTableChangelogEntry("old_table", "new_table");
+
+        assertEquals("old_table", entry.getOldTableName());
+        assertEquals("new_table", entry.getNewTableName());
+        assertTrue(entry.supportsAutoRollback());
+        assertTrue(entry.getDescription().contains("old_table"));
+        assertTrue(entry.getDescription().contains("new_table"));
+        assertNotNull(entry.toString());
+
+        IChangelogEntry rollback = entry.createAutoRollback();
+        assertNotNull(rollback);
+        assertTrue(rollback instanceof RenameTableChangelogEntry);
+        RenameTableChangelogEntry rollbackEntry = (RenameTableChangelogEntry) rollback;
+        assertEquals("new_table", rollbackEntry.getOldTableName());
+        assertEquals("old_table", rollbackEntry.getNewTableName());
+    }
+
+
+    /**
+     * Test RenameTableChangelogEntry equals and hashCode.
+     */
+    @Test
+    void testRenameTableEquality() {
+        RenameTableChangelogEntry e1 = new RenameTableChangelogEntry("a", "b");
+        RenameTableChangelogEntry e2 = new RenameTableChangelogEntry("a", "b");
+        RenameTableChangelogEntry e3 = new RenameTableChangelogEntry("a", "c");
+
+        assertEquals(e1, e2);
+        assertEquals(e1.hashCode(), e2.hashCode());
+        assertNotEquals(e1, e3);
+    }
 }

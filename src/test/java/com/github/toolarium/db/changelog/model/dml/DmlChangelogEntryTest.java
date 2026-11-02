@@ -84,12 +84,11 @@ public class DmlChangelogEntryTest {
         UpdateChangelogEntry e1 = new UpdateChangelogEntry(TEST_TABLE, TEST_WHERE);
         UpdateChangelogEntry e2 = new UpdateChangelogEntry(TEST_TABLE, TEST_WHERE);
         UpdateChangelogEntry e3 = new UpdateChangelogEntry(TEST_TABLE, "id = 2");
-        UpdateChangelogEntry e4 = new UpdateChangelogEntry("orders", TEST_WHERE);
 
         assertEquals(e1, e2);
         assertEquals(e1.hashCode(), e2.hashCode());
         assertNotEquals(e1, e3);
-        assertNotEquals(e1, e4);
+        assertNotEquals(e1, new UpdateChangelogEntry("orders", TEST_WHERE));
     }
 
 

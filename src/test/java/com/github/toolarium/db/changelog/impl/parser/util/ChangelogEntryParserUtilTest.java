@@ -47,6 +47,10 @@ public class ChangelogEntryParserUtilTest {
     private static final String TEST_PATH = "test.db.yaml";
     private static final String TEST_TABLE = "users";
     private static final String TEST_COLUMN = "email";
+    private static final String KEY_TABLE_NAME = "tableName";
+    private static final String KEY_COLUMNS = "columns";
+    private static final String KEY_COLUMN_NAME = "columnName";
+    private static final String KEY_INDEX_NAME = "indexName";
     private final IChangelogParameterResolver resolver = new NoOpParameterResolver();
 
 
@@ -61,6 +65,8 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing sql entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseSql() throws ChangelogParseException {
@@ -75,6 +81,8 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing createTable entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseCreateTable() throws ChangelogParseException {
@@ -83,13 +91,10 @@ public class ChangelogEntryParserUtilTest {
         colMap.put("type", "INT");
 
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columns", Collections.singletonList(colMap));
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMNS, Collections.singletonList(colMap));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createTable", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createTable", innerMap);
         assertTrue(entry instanceof CreateTableChangelogEntry);
         assertEquals(TEST_TABLE, ((CreateTableChangelogEntry) entry).getTableName());
     }
@@ -97,16 +102,15 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing dropTable entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseDropTable() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropTable", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropTable", innerMap);
         assertTrue(entry instanceof DropTableChangelogEntry);
         assertEquals(TEST_TABLE, ((DropTableChangelogEntry) entry).getTableName());
     }
@@ -114,6 +118,8 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing addColumn entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseAddColumn() throws ChangelogParseException {
@@ -122,13 +128,10 @@ public class ChangelogEntryParserUtilTest {
         colMap.put("type", "VARCHAR(255)");
 
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columns", Collections.singletonList(colMap));
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMNS, Collections.singletonList(colMap));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("addColumn", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("addColumn", innerMap);
         assertTrue(entry instanceof AddColumnChangelogEntry);
         assertEquals(TEST_TABLE, ((AddColumnChangelogEntry) entry).getTableName());
     }
@@ -136,17 +139,16 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing dropColumn entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseDropColumn() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columns", Arrays.asList(TEST_COLUMN));
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMNS, Arrays.asList(TEST_COLUMN));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropColumn", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropColumn", innerMap);
         assertTrue(entry instanceof DropColumnChangelogEntry);
         assertEquals(1, ((DropColumnChangelogEntry) entry).getColumnNames().size());
     }
@@ -154,18 +156,17 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing createIndex entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseCreateIndex() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("indexName", "idx_email");
-        innerMap.put("columns", Arrays.asList(TEST_COLUMN));
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_INDEX_NAME, "idx_email");
+        innerMap.put(KEY_COLUMNS, Arrays.asList(TEST_COLUMN));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createIndex", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createIndex", innerMap);
         assertTrue(entry instanceof CreateIndexChangelogEntry);
         assertEquals("idx_email", ((CreateIndexChangelogEntry) entry).getIndexName());
     }
@@ -173,23 +174,24 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test parsing dropIndex entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseDropIndex() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("indexName", "idx_email");
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_INDEX_NAME, "idx_email");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropIndex", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropIndex", innerMap);
         assertTrue(entry instanceof DropIndexChangelogEntry);
     }
 
 
     /**
      * Test parsing renameTable entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseRenameTable() throws ChangelogParseException {
@@ -197,118 +199,111 @@ public class ChangelogEntryParserUtilTest {
         innerMap.put("oldTableName", "old_table");
         innerMap.put("newTableName", "new_table");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("renameTable", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("renameTable", innerMap);
         assertTrue(entry instanceof RenameTableChangelogEntry);
     }
 
 
     /**
      * Test parsing renameColumn entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseRenameColumn() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
         innerMap.put("oldColumnName", "old_col");
         innerMap.put("newColumnName", "new_col");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("renameColumn", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("renameColumn", innerMap);
         assertTrue(entry instanceof RenameColumnChangelogEntry);
     }
 
 
     /**
      * Test parsing modifyColumn entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseModifyColumn() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columnName", TEST_COLUMN);
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMN_NAME, TEST_COLUMN);
         innerMap.put("newType", "TEXT");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("modifyColumn", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("modifyColumn", innerMap);
         assertTrue(entry instanceof ModifyColumnChangelogEntry);
     }
 
 
     /**
      * Test parsing addNotNullConstraint entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseAddNotNull() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columnName", TEST_COLUMN);
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMN_NAME, TEST_COLUMN);
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("addNotNullConstraint", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("addNotNullConstraint", innerMap);
         assertTrue(entry instanceof AddNotNullConstraintChangelogEntry);
     }
 
 
     /**
      * Test parsing dropNotNullConstraint entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseDropNotNull() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columnName", TEST_COLUMN);
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMN_NAME, TEST_COLUMN);
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropNotNullConstraint", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropNotNullConstraint", innerMap);
         assertTrue(entry instanceof DropNotNullConstraintChangelogEntry);
     }
 
 
     /**
      * Test parsing createSequence entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseCreateSequence() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
         innerMap.put("sequenceName", "user_id_seq");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createSequence", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createSequence", innerMap);
         assertTrue(entry instanceof CreateSequenceChangelogEntry);
     }
 
 
     /**
      * Test parsing dropSequence entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseDropSequence() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
         innerMap.put("sequenceName", "user_id_seq");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropSequence", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropSequence", innerMap);
         assertTrue(entry instanceof DropSequenceChangelogEntry);
     }
 
 
     /**
      * Test parsing createView entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseCreateView() throws ChangelogParseException {
@@ -316,32 +311,30 @@ public class ChangelogEntryParserUtilTest {
         innerMap.put("viewName", "user_summary");
         innerMap.put("selectQuery", "SELECT id, name FROM users");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createView", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createView", innerMap);
         assertTrue(entry instanceof CreateViewChangelogEntry);
     }
 
 
     /**
      * Test parsing dropView entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseDropView() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
         innerMap.put("viewName", "user_summary");
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropView", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropView", innerMap);
         assertTrue(entry instanceof DropViewChangelogEntry);
     }
 
 
     /**
      * Test parsing tagDatabase entry.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testParseTagDatabase() throws ChangelogParseException {
@@ -382,6 +375,8 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test createTable with column constraints.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testCreateTableWithConstraints() throws ChangelogParseException {
@@ -396,13 +391,10 @@ public class ChangelogEntryParserUtilTest {
         colMap.put("constraints", constraints);
 
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columns", Collections.singletonList(colMap));
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMNS, Collections.singletonList(colMap));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createTable", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createTable", innerMap);
         assertNotNull(entry);
         assertTrue(entry instanceof CreateTableChangelogEntry);
         CreateTableChangelogEntry createTable = (CreateTableChangelogEntry) entry;
@@ -413,6 +405,8 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test createTable with default value.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testCreateTableWithDefaultValue() throws ChangelogParseException {
@@ -422,13 +416,10 @@ public class ChangelogEntryParserUtilTest {
         colMap.put("defaultValue", "active");
 
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columns", Collections.singletonList(colMap));
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMNS, Collections.singletonList(colMap));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createTable", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createTable", innerMap);
         CreateTableChangelogEntry createTable = (CreateTableChangelogEntry) entry;
         assertEquals("active", createTable.getColumns().get(0).getDefaultValue());
     }
@@ -436,36 +427,34 @@ public class ChangelogEntryParserUtilTest {
 
     /**
      * Test createIndex with unique flag.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testCreateUniqueIndex() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("indexName", "idx_unique_email");
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_INDEX_NAME, "idx_unique_email");
         innerMap.put("unique", "true");
-        innerMap.put("columns", Arrays.asList(TEST_COLUMN));
+        innerMap.put(KEY_COLUMNS, Arrays.asList(TEST_COLUMN));
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("createIndex", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("createIndex", innerMap);
         assertTrue(((CreateIndexChangelogEntry) entry).isUnique());
     }
 
 
     /**
      * Test dropColumn with single string column.
+     *
+     * @throws ChangelogParseException on error
      */
     @Test
     void testDropColumnSingleString() throws ChangelogParseException {
         Map<String, Object> innerMap = new HashMap<>();
-        innerMap.put("tableName", TEST_TABLE);
-        innerMap.put("columns", TEST_COLUMN);
+        innerMap.put(KEY_TABLE_NAME, TEST_TABLE);
+        innerMap.put(KEY_COLUMNS, TEST_COLUMN);
 
-        Map<String, Object> entryMap = new HashMap<>();
-        entryMap.put("dropColumn", innerMap);
-
-        IChangelogEntry entry = ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+        IChangelogEntry entry = parseEntry("dropColumn", innerMap);
         assertTrue(entry instanceof DropColumnChangelogEntry);
         List<String> cols = ((DropColumnChangelogEntry) entry).getColumnNames();
         assertEquals(1, cols.size());
@@ -474,9 +463,24 @@ public class ChangelogEntryParserUtilTest {
 
 
     /**
+     * Helper to build an entry map and parse it.
+     *
+     * @param key the entry type key
+     * @param innerMap the inner map
+     * @return the parsed entry
+     * @throws ChangelogParseException on error
+     */
+    private IChangelogEntry parseEntry(String key, Map<String, Object> innerMap) throws ChangelogParseException {
+        Map<String, Object> entryMap = new HashMap<>();
+        entryMap.put(key, innerMap);
+        return ChangelogEntryParserUtil.getInstance().parseEntry(entryMap, resolver, TEST_PATH);
+    }
+
+
+    /**
      * No-op parameter resolver that returns values as-is.
      */
-    private static class NoOpParameterResolver implements IChangelogParameterResolver {
+    private static final class NoOpParameterResolver implements IChangelogParameterResolver {
 
         /**
          * @see com.github.toolarium.db.changelog.impl.resolver.IChangelogParameterResolver#resolve(String)

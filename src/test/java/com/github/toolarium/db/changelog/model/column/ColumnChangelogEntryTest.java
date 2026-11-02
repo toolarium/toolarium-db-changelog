@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
  */
 public class ColumnChangelogEntryTest {
     private static final String TABLE_USERS = "users";
+    private static final String TABLE_T1 = "t1";
 
 
     /**
@@ -100,8 +101,8 @@ public class ColumnChangelogEntryTest {
      */
     @Test
     void testAddColumnEquality() {
-        AddColumnChangelogEntry e1 = new AddColumnChangelogEntry("t1", Collections.emptyList());
-        AddColumnChangelogEntry e2 = new AddColumnChangelogEntry("t1", Collections.emptyList());
+        AddColumnChangelogEntry e1 = new AddColumnChangelogEntry(TABLE_T1, Collections.emptyList());
+        AddColumnChangelogEntry e2 = new AddColumnChangelogEntry(TABLE_T1, Collections.emptyList());
         AddColumnChangelogEntry e3 = new AddColumnChangelogEntry("t2", Collections.emptyList());
 
         assertEquals(e1, e2);
@@ -128,13 +129,85 @@ public class ColumnChangelogEntryTest {
 
 
     /**
+     * Test ModifyColumnChangelogEntry.
+     */
+    @Test
+    void testModifyColumn() {
+        ModifyColumnChangelogEntry entry = new ModifyColumnChangelogEntry(TABLE_USERS, "name", "TEXT");
+
+        assertEquals(TABLE_USERS, entry.getTableName());
+        assertEquals("name", entry.getColumnName());
+        assertEquals("TEXT", entry.getNewType());
+        assertFalse(entry.supportsAutoRollback());
+        assertNull(entry.createAutoRollback());
+        assertTrue(entry.getDescription().contains(TABLE_USERS));
+        assertTrue(entry.getDescription().contains("name"));
+        assertNotNull(entry.toString());
+    }
+
+
+    /**
+     * Test ModifyColumnChangelogEntry equals and hashCode.
+     */
+    @Test
+    void testModifyColumnEquality() {
+        ModifyColumnChangelogEntry e1 = new ModifyColumnChangelogEntry(TABLE_T1, "c1", "INT");
+        ModifyColumnChangelogEntry e2 = new ModifyColumnChangelogEntry(TABLE_T1, "c1", "INT");
+        ModifyColumnChangelogEntry e3 = new ModifyColumnChangelogEntry(TABLE_T1, "c1", "TEXT");
+
+        assertEquals(e1, e2);
+        assertEquals(e1.hashCode(), e2.hashCode());
+        assertNotEquals(e1, e3);
+    }
+
+
+    /**
+     * Test RenameColumnChangelogEntry.
+     */
+    @Test
+    void testRenameColumn() {
+        RenameColumnChangelogEntry entry = new RenameColumnChangelogEntry(TABLE_USERS, "old_name", "new_name");
+
+        assertEquals(TABLE_USERS, entry.getTableName());
+        assertEquals("old_name", entry.getOldColumnName());
+        assertEquals("new_name", entry.getNewColumnName());
+        assertTrue(entry.supportsAutoRollback());
+        assertTrue(entry.getDescription().contains("old_name"));
+        assertTrue(entry.getDescription().contains("new_name"));
+        assertNotNull(entry.toString());
+
+        IChangelogEntry rollback = entry.createAutoRollback();
+        assertNotNull(rollback);
+        assertTrue(rollback instanceof RenameColumnChangelogEntry);
+        RenameColumnChangelogEntry rollbackEntry = (RenameColumnChangelogEntry) rollback;
+        assertEquals("new_name", rollbackEntry.getOldColumnName());
+        assertEquals("old_name", rollbackEntry.getNewColumnName());
+    }
+
+
+    /**
+     * Test RenameColumnChangelogEntry equals and hashCode.
+     */
+    @Test
+    void testRenameColumnEquality() {
+        RenameColumnChangelogEntry e1 = new RenameColumnChangelogEntry(TABLE_T1, "a", "b");
+        RenameColumnChangelogEntry e2 = new RenameColumnChangelogEntry(TABLE_T1, "a", "b");
+        RenameColumnChangelogEntry e3 = new RenameColumnChangelogEntry(TABLE_T1, "a", "c");
+
+        assertEquals(e1, e2);
+        assertEquals(e1.hashCode(), e2.hashCode());
+        assertNotEquals(e1, e3);
+    }
+
+
+    /**
      * Test DropColumnChangelogEntry equals and hashCode.
      */
     @Test
     void testDropColumnEquality() {
-        DropColumnChangelogEntry e1 = new DropColumnChangelogEntry("t1", Arrays.asList("c1"));
-        DropColumnChangelogEntry e2 = new DropColumnChangelogEntry("t1", Arrays.asList("c1"));
-        DropColumnChangelogEntry e3 = new DropColumnChangelogEntry("t1", Arrays.asList("c2"));
+        DropColumnChangelogEntry e1 = new DropColumnChangelogEntry(TABLE_T1, Arrays.asList("c1"));
+        DropColumnChangelogEntry e2 = new DropColumnChangelogEntry(TABLE_T1, Arrays.asList("c1"));
+        DropColumnChangelogEntry e3 = new DropColumnChangelogEntry(TABLE_T1, Arrays.asList("c2"));
 
         assertEquals(e1, e2);
         assertEquals(e1.hashCode(), e2.hashCode());

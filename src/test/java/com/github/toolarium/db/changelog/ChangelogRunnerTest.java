@@ -7,6 +7,7 @@ package com.github.toolarium.db.changelog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.impl.ChangelogRunnerImpl;
@@ -197,6 +198,57 @@ public class ChangelogRunnerTest {
         assertEquals(history.get(0).getDeploymentId(), history.get(1).getDeploymentId(),
                 "Changesets from same run should share deployment id");
     }
+
+    /**
+     * Test sync marks all pending changesets as executed.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testSync() throws Exception {
+        IChangelogRunner runner = createRunner(
+            changeSet(ID_1, "CREATE TABLE sync_test (id INT PRIMARY KEY)"),
+            changeSet(ID_2, "CREATE TABLE sync_test2 (id INT PRIMARY KEY)")
+        );
+
+        runner.sync();
+
+        List<IChangelogTrackingEntry> history = runner.history();
+        assertEquals(2, history.size());
+        assertEquals(ChangelogExecutionType.MARK_RAN, history.get(0).getExecutionType());
+        assertEquals(ChangelogExecutionType.MARK_RAN, history.get(1).getExecutionType());
+    }
+
+
+    /**
+     * Test status returns without error.
+     *
+     * @throws Exception on error
+     */
+    @Test
+    void testStatus() throws Exception {
+        IChangelogRunner runner = createRunner(
+            changeSet(ID_1, "CREATE TABLE status_test (id INT PRIMARY KEY)")
+        );
+
+        runner.update();
+        assertNotNull(runner.status());
+    }
+
+
+    /**
+     * Test update without changelog throws exception.
+     */
+    @Test
+    void testUpdateWithoutChangelog() {
+        ChangelogRunnerImpl runner = (ChangelogRunnerImpl) ChangelogRunnerBuilder.builder()
+                .dataSource(dataSource)
+                .build();
+
+        assertThrows(com.github.toolarium.db.changelog.exception.ChangelogException.class,
+                () -> runner.update());
+    }
+
 
     /**
      * Test Version.

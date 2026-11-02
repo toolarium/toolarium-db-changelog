@@ -5,7 +5,6 @@
  */
 package com.github.toolarium.db.changelog.impl.sql.impl;
 
-import com.github.toolarium.db.changelog.exception.ChangelogException;
 import com.github.toolarium.db.changelog.impl.sql.IChangelogSqlGenerator;
 import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
@@ -91,7 +90,7 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
             return generateDropView((DropViewChangelogEntry) entry);
         }
 
-        throw new ChangelogException("Unsupported entry type for SQL generation: " + entry.getClass().getName());
+        throw new IllegalArgumentException("Unsupported entry type for SQL generation: " + entry.getClass().getName());
     }
 
 
@@ -369,11 +368,11 @@ public class GenericChangelogSqlGeneratorImpl implements IChangelogSqlGenerator 
      *
      * @param value the value to check
      * @param name the name for error messages
-     * @throws ChangelogException if the value is null
+     * @throws IllegalArgumentException if the value is null
      */
     protected void requireNonNull(Object value, String name) {
         if (value == null) {
-            throw new ChangelogException("Required attribute [" + name + "] must not be null.");
+            throw new IllegalArgumentException("Required attribute [" + name + "] must not be null.");
         }
     }
 

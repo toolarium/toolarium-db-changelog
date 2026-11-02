@@ -23,6 +23,8 @@ A Java library for automated database schema migrations and rollbacks. It provid
 - **Context and label filtering**: conditional changeset execution based on active contexts and labels
 - **Sync operation**: mark all pending changesets as executed without running (baselining)
 - **Rollback automation**: auto-rollback for DDL, Level 1 SQL rollback generator for raw SQL, dry-run via `generateRollbackSql()`
+- **Resilient rollback**: continues on partial failure, reports all errors
+- **Security hardened**: SQL identifier validation, XXE protection, safe YAML deserialization, path traversal prevention, statement timeouts
 - **All major databases**: PostgreSQL, MySQL, MariaDB, Oracle, SQL Server, H2, DB2, and more
 
 

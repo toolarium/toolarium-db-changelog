@@ -225,13 +225,6 @@ public class ChangelogConfiguration {
      * @param name the name for error messages
      * @throws IllegalArgumentException if the identifier is invalid
      */
-    /**
-     * Validate that a SQL identifier contains only safe characters.
-     *
-     * @param identifier the identifier to validate
-     * @param name the name for error messages
-     * @throws IllegalArgumentException if the identifier is invalid
-     */
     public static void validateIdentifier(String identifier, String name) {
         if (identifier == null || identifier.isEmpty()) {
             throw new IllegalArgumentException(name + " must not be null or empty.");

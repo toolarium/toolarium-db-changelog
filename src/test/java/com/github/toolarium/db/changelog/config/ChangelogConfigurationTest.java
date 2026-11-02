@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
  * @author patrick
  */
 public class ChangelogConfigurationTest {
+    private static final String TEST_FIELD = "test";
 
     /**
      * Test default values.
@@ -101,10 +102,10 @@ public class ChangelogConfigurationTest {
      */
     @Test
     void testValidIdentifiers() {
-        ChangelogConfiguration.validateIdentifier("DB_CHANGELOG", "test");
-        ChangelogConfiguration.validateIdentifier("my_table", "test");
-        ChangelogConfiguration.validateIdentifier("_private", "test");
-        ChangelogConfiguration.validateIdentifier("Table123", "test");
+        ChangelogConfiguration.validateIdentifier("DB_CHANGELOG", TEST_FIELD);
+        ChangelogConfiguration.validateIdentifier("my_table", TEST_FIELD);
+        ChangelogConfiguration.validateIdentifier("_private", TEST_FIELD);
+        ChangelogConfiguration.validateIdentifier("Table123", TEST_FIELD);
     }
 
 
@@ -114,17 +115,17 @@ public class ChangelogConfigurationTest {
     @Test
     void testInvalidIdentifiers() {
         assertThrows(IllegalArgumentException.class,
-                () -> ChangelogConfiguration.validateIdentifier(null, "test"));
+                () -> ChangelogConfiguration.validateIdentifier(null, TEST_FIELD));
         assertThrows(IllegalArgumentException.class,
-                () -> ChangelogConfiguration.validateIdentifier("", "test"));
+                () -> ChangelogConfiguration.validateIdentifier("", TEST_FIELD));
         assertThrows(IllegalArgumentException.class,
-                () -> ChangelogConfiguration.validateIdentifier("123table", "test"));
+                () -> ChangelogConfiguration.validateIdentifier("123table", TEST_FIELD));
         assertThrows(IllegalArgumentException.class,
-                () -> ChangelogConfiguration.validateIdentifier("my table", "test"));
+                () -> ChangelogConfiguration.validateIdentifier("my table", TEST_FIELD));
         assertThrows(IllegalArgumentException.class,
-                () -> ChangelogConfiguration.validateIdentifier("drop;--", "test"));
+                () -> ChangelogConfiguration.validateIdentifier("drop;--", TEST_FIELD));
         assertThrows(IllegalArgumentException.class,
-                () -> ChangelogConfiguration.validateIdentifier("table.name", "test"));
+                () -> ChangelogConfiguration.validateIdentifier("table.name", TEST_FIELD));
     }
 
 

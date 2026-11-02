@@ -7,6 +7,7 @@ package com.github.toolarium.db.changelog.impl.sql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.github.toolarium.db.changelog.model.column.AddColumnChangelogEntry;
@@ -185,12 +186,39 @@ public class GenericChangelogSqlGeneratorTest {
 
 
     /**
-     * Test unsupported entry returns empty list.
+     * Test unsupported entry throws exception.
      */
     @Test
-    void testUnsupportedEntryReturnsEmpty() {
-        List<String> sql = generator.generateSql(new com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry("SELECT 1"));
-        assertTrue(sql.isEmpty());
+    void testUnsupportedEntryThrows() {
+        assertThrows(IllegalArgumentException.class,
+                () -> generator.generateSql(new com.github.toolarium.db.changelog.model.sql.SqlChangelogEntry("SELECT 1")));
+    }
+
+
+    /**
+     * Test default value with single quotes is escaped.
+     */
+    @Test
+    void testDefaultValueEscaping() {
+        ChangelogColumnDefinition col = new ChangelogColumnDefinition("name", "VARCHAR(100)");
+        col.setDefaultValue("O'Brien");
+
+        CreateTableChangelogEntry entry = new CreateTableChangelogEntry("test",
+                Collections.singletonList(col));
+
+        List<String> sql = generator.generateSql(entry);
+        assertTrue(sql.get(0).contains("DEFAULT 'O''Brien'"));
+    }
+
+
+    /**
+     * Test null table name throws exception.
+     */
+    @Test
+    void testNullTableNameThrows() {
+        CreateTableChangelogEntry entry = new CreateTableChangelogEntry(null, Collections.emptyList());
+        assertThrows(IllegalArgumentException.class,
+                () -> generator.generateSql(entry));
     }
 
 

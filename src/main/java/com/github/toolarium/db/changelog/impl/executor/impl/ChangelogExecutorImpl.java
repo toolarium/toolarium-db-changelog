@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * @author patrick
  */
 public class ChangelogExecutorImpl implements IChangelogExecutor {
-    private static final String KEY_SEPARATOR = "::";
+    private static final String KEY_SEPARATOR = "|";
     private static final String LOG_SUFFIX = "].";
     private static final int DEFAULT_STATEMENT_TIMEOUT_SECONDS = 300;
     private static final Logger LOG = LoggerFactory.getLogger(ChangelogExecutorImpl.class);

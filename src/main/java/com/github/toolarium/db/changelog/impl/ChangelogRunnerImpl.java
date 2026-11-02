@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * @author patrick
  */
 public class ChangelogRunnerImpl implements IChangelogRunner {
-    private static final String KEY_SEPARATOR = "::";
+    private static final String KEY_SEPARATOR = "|";
     private static final Logger LOG = LoggerFactory.getLogger(ChangelogRunnerImpl.class);
     private final ChangelogConfiguration config;
     private final IChangelogTracker tracker;

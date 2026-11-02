@@ -5,6 +5,7 @@
  */
 package com.github.toolarium.db.changelog.impl.parser.dbchangelog;
 
+import com.github.toolarium.common.util.EnumUtil;
 import com.github.toolarium.db.changelog.exception.ChangelogParseException;
 import com.github.toolarium.db.changelog.impl.parser.ChangelogParserFactory;
 import com.github.toolarium.db.changelog.impl.parser.IChangelogParser;
@@ -18,7 +19,6 @@ import com.github.toolarium.db.changelog.model.IChangelog;
 import com.github.toolarium.db.changelog.model.IChangelogChangeSet;
 import com.github.toolarium.db.changelog.model.IChangelogEntry;
 import com.github.toolarium.db.changelog.model.precondition.ChangelogPreconditionContainer;
-import com.github.toolarium.common.util.EnumUtil;
 import com.github.toolarium.db.changelog.model.precondition.ChangelogPreconditionFailureAction;
 import com.github.toolarium.db.changelog.model.precondition.DbmsPrecondition;
 import com.github.toolarium.db.changelog.model.precondition.IChangelogPrecondition;

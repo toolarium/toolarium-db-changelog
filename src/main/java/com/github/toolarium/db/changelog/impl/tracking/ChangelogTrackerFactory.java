@@ -10,6 +10,9 @@ import com.github.toolarium.db.changelog.impl.tracking.impl.ChangelogTrackerImpl
 
 /**
  * Singleton factory for creating changelog tracker instances.
+ * The returned tracker is not thread-safe; each caller must pass a dedicated
+ * {@link java.sql.Connection} per thread. The changelog runner serializes
+ * access via the changelog lock.
  *
  * @author patrick
  */
