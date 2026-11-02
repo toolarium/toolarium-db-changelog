@@ -5,7 +5,7 @@
 
 # toolarium-db-changelog
 
-A Java library for automated database schema migrations and rollbacks. It provides its own changelog format (`.db.yaml`, `.db.xml`, `.db.json`) and can import external changelog formats for migration compatibility. Distributed locking is handled by [toolarium-leader-election](https://github.com/toolarium/toolarium-leader-election).
+An open-source Java library for automated database schema migrations and rollbacks, committed to remaining open source. A modern alternative to Liquibase and Flyway with no commercial restrictions: rollback, dry-run, preconditions, and all advanced features are free and built-in, forever. Provides its own clean changelog format (`.db.yaml`, `.db.xml`, `.db.json`) and can import existing Liquibase and Flyway changelogs for seamless migration. Distributed locking is handled by [toolarium-leader-election](https://github.com/toolarium/toolarium-leader-election).
 
 
 ## Features
